@@ -1,0 +1,577 @@
+---
+title: "MATH 2310 Lab 1"
+author: Gary Tou
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+## Instructions
+
+This lab consists of two parts. The first part is a series of demonstration code and text to help you get familiar with some of the basic concepts of R and how to use them to explore some of the concepts we have talked about in class. We will go through most of this together in class and it should be used as reference code for answering other parts of the assignment.
+
+The second part of the lab is a series of questions that you will be asked to complete. For each question you should:
+
+-   Include any calculations in R as code chunks. Include comments using `#` in the code chunks to explain any calculations.
+
+-   For every question there should be text to summarize what you found and make any conclusions necessary to complete your answer.
+
+-   Once you have written all your code you should `knit` your document. This will produce a nice html file. REVIEW the html file before submitting it to make sure everything you wanted to appear is there. This is the document you will upload on canvas.
+
+-   Grading - You assignment will be graded as follows.
+
+    -   100% - *Everything* is answered, including text and there are only minimal errors. The intention is that if you make a reasonable effort to demonstrate that you understand the concepts and that you know how to implement them that you will get full credit.
+
+    -   80% - *Everything* is answered, including text but there are significant gaps in understanding.
+
+    -   50% - There are portions that are un-answered but there was some attempt at completion.
+
+-   You are encouraged to ask me questions and you are welcome to work together, although you must submit your own assignment.
+
+## Introduction
+
+In this lab we will learn how to use R to graph and summarize a data set.
+
+You will explore two data sets.
+
+The first data set we will work through together in class. It consists of values of CO$_2$ emissions (in metric tons/person) for different countries in the years between 1960 and 2014. Your goal is to be able to make plots and describe the distribution of CO$_2$ emissions among these countries.
+
+The second data set consists of the nutritional information for several types of foods. You will be asked to explore the distribution of different nutritional aspects of food using the techniques we discuss in class. You may have some time in class but some of it will probably be done outside of class.
+
+## In-Class Exploration
+
+We will use graphs and numerical summaries to characterize the distribution of CO$_2$ emissions in 2010 and to compare distributions between 1960 and 2010.
+
+Questions we will try to answer:
+
+1.  How are CO$_2$ emissions (in metric tons/person) distributed over different countries in 2010? Are there any countries with very high emissions?
+
+2.  How do CO$_2$ emissions in 2010 compare to CO$_2$ emissions in 1960?
+
+### Import libraries
+
+In R you have to install packages. This step only has to be done once. Then each time you run a script you have to run the library command to bring those packages into the working environment.
+
+This lab will use the library `tidyverse` to explore our data.
+
+```{r}
+#install.packages('tidyverse')
+library(tidyverse)
+
+```
+
+### Basic Commands
+
+`R` uses *functions* to perform operations. To run a function called `funcname`, we type `funcname(input1, input2,...)`, where the inputs (or *arguments*) `input1` and `input2` tell `R` how to run the function. A function can have any number of inputs. For example, to create a vector of numbers, we use the function `c()` (for *concatenate*). Any numbers inside the parentheses are joined together. The following command instructs `R` to join together the numbers 1, 3, 2, and 5, and to save them as a vector named `x`. When we type `x`, it gives us back the vector.
+
+```{r chunk1}
+x <- c(1, 3, 2, 5)
+x
+```
+
+Note that the `>` displayed in the Console is not part of the command; rather, it is printed by `R` to indicate that it is ready for another command to be entered. We can also save things using `=` rather than `<-`:
+
+```{r chunk2}
+x = c(1, 6, 2)
+x
+y = c(1, 4, 3)
+```
+
+If typing in the console, hitting the *up* arrow multiple times will display the previous commands, which can then be edited. This is useful since one often wishes to repeat a similar command. In addition, typing `?funcname` will always cause `R` to open a new help file window with additional information about the function `funcname()`. Try typing `?summary` in the console.
+
+We can tell `R` to add two sets of numbers together. It will then add the first number from `x` to the first number from `y`, and so on. However, `x` and `y` should be the same length. We can check their length using the `length()` function.
+
+```{r chunk3}
+length(x)
+length(y)
+x + y
+```
+
+The `ls()` function allows us to look at a list of all of the objects, such as data and functions, that we have saved so far. The `rm()` function can be used to delete any that we don't want.
+
+```{r chunk4}
+ls()
+rm(x, y)
+ls()
+```
+
+It's also possible to remove all objects at once:
+
+```{r chunk5}
+rm(list = ls())
+```
+
+The `matrix()` function can be used to create a matrix of numbers. Before we use the `matrix()` function, we can learn more about it:
+
+```{r chunk6}
+?matrix
+```
+
+The help file reveals that the `matrix()` function takes a number of inputs, but for now we focus on the first three: the data (the entries in the matrix), the number of rows, and the number of columns. First, we create a simple matrix.
+
+```{r chunk7}
+x <- matrix(data = c(1, 2, 3, 4), nrow = 2, ncol = 2)
+x
+```
+
+Note that we could just as well omit typing `data=`, `nrow=`, and `ncol=` in the `matrix()` command above: that is, we could just type
+
+```{r chunk8}
+x <- matrix(c(1, 2, 3, 4), 2, 2)
+```
+
+and this would have the same effect. However, it can sometimes be useful to specify the names of the arguments passed in, since otherwise `R` will assume that the function arguments are passed into the function in the same order that is given in the function's help file. As this example illustrates, by default `R` creates matrices by successively filling in columns. Alternatively, the `byrow = TRUE` option can be used to populate the matrix in order of the rows.
+
+```{r chunk9}
+matrix(c(1, 2, 3, 4), 2, 2, byrow = TRUE)
+```
+
+Notice that in the above command we did not assign the matrix to a value such as `x`. In this case the matrix is printed to the screen but is not saved for future calculations. The `sqrt()` function returns the square root of each element of a vector or matrix. The command `x^2` raises each element of `x` to the power `2`; any powers are possible, including fractional or negative powers.
+
+```{r chunk10}
+sqrt(x)
+x^2
+```
+
+### Indexing Data
+
+We often wish to examine part of a set of data. Suppose that our data is stored in the matrix `A`.
+
+```{r chunk19}
+A <- matrix(1:16, 4, 4)
+A
+```
+
+Then, typing
+
+```{r chunk20}
+A[2, 3]
+```
+
+will select the element corresponding to the second row and the third column. The first number after the open-bracket symbol `[` always refers to the row, and the second number always refers to the column. We can also select multiple rows and columns at a time, by providing vectors as the indices.
+
+```{r chunk21}
+A[c(1, 3), c(2, 4)]
+A[1:3, 2:4]
+A[1:2, ]
+A[, 1:2]
+```
+
+The last two examples include either no index for the columns or no index for the rows. These indicate that `R` should include all columns or all rows, respectively. `R` treats a single row or column of a matrix as a vector.
+
+```{r chunk22}
+A[1, ]
+```
+
+The use of a negative sign `-` in the index tells `R` to keep all rows or columns except those indicated in the index.
+
+```{r chunk23}
+A[-c(1, 3), ]
+A[-c(1, 3), -c(1, 3, 4)]
+```
+
+The `dim()` function outputs the number of rows followed by the number of columns of a given matrix.
+
+```{r chunk24}
+dim(A)
+```
+
+### Loading Data
+
+You should have a csv file called `CO2EmissionsCountries1960to2014.csv` saved somewhere where you can access the file. There are a variety of ways of reading in data into R. The function `read.csv` is a simple way of reading in a data set saved as a csv. Below is an example the file, run the cell below. You will need to change the path to the file. The function
+
+```{r}
+
+df = read.csv('CO2EmissionsCountries1960to2014.csv', fileEncoding="UTF-8-BOM")
+#df = read.csv('/add the path to where you put the data/CO2EmissionsCountries1960to2014.csv',fileEncoding="UTF-8-BOM")
+```
+
+### View Data
+
+It is often useful to look at a few rows of the data frame using the `head` function. This will show you the first few values from each column of the data frame. This helps to give you a sense of what variables are present in the data set and what kinds of values they take on. You can also use `View` which will display *all* rows of a data frame, but be careful of this since if the data set is large it can take up a lot of memory and kill you session.
+
+```{r}
+head(df)
+
+#Alter the number of rows displayed, the default is 6
+head(df, 10)
+
+#You could also do this with indices
+df[1:10, ] #(select rows 1 through 10 and all columns)
+
+#If the columns have names you can use them instead of the number indicies
+df[90:100, c('Country.Name', 'X2010', 'X2007')]  #select just the three columns indicated and pull only rows 90 to 100. 
+```
+
+Use `names(df)` to determine the variables in your data set. This will list out the names of all the columns (if they have names).
+
+```{r}
+names(df)
+
+```
+
+The columns of interest in the data set are the Country Name, Country Code (which is redundant with Country Name), and the CO$_2$ emissions for many years (the name `X2007` is the emissions in 2007 for example). The indicator name tells you what is measured in each year.
+
+We can use the `head` of the data frame to determine the data types of variables by looking at the label beneath each name.
+
+```{r}
+
+head(df)
+```
+
+For example, `Country Name` is a character type variable, indicted by `<chr>` or `<fct>`. They data type is determined by some automatic processing in the `read.csv` function used to load the data. You can change the type and in some cases we will do this, but you have to be careful as to not loose data when changing the data type. Note that the *data type* and the *variable type* are not always aligned. For instance a categorical variable might be stored as a numerical data type (we will see this come up later).
+
+We can also use the `str` function to determine the types of variables. This command will list all the variables with their data type and the first few values.
+
+```{r}
+str(df)
+
+```
+
+Most significantly, CO$_2$ emission at each year is a number and it makes sense to do arithmetic with the values, so it is a numerical variable.
+
+To look at the entire data set, we can type the name of our data frame or use `View()` To look at one column, use the name of the data frame followed by a `$` and then the name of the column.
+
+```{r}
+#To look at the entire data set, we can type the name of our data frame.
+#To look at one column, type df$Name of the column
+df$X2010
+```
+
+Note that there are some `NA` values. We could filter those to just look at the rows where the `NA`s occur.
+
+```{r}
+filter(df, is.na(X2010))
+```
+
+It looks like these are countries that didn't report the emissions in 2010.
+
+It is difficult to understand the shape of the distribution just by looking at the data table. There are clearly a few large values and many smaller values, but the exact shape of the distribution is not easy to visualize.
+
+Finally the `summary()` function can be useful to get a quick view of some basic things related to the data. You can call this on a single column, a full data set, or multiple columns. The summary values will be different for different data types.
+
+```{r}
+summary(df) # will produce a summary for each column of df
+
+summary(df$X2010) # Can also call a single column
+```
+
+Another useful command is the `quantile()` function which can be used to find different points in the data where there are certain percentages below that value. These are often referred to as *percentiles*.
+
+```{r}
+quantile(df$X2010, .25, type=6, na.rm=TRUE)  #the argument type=6 is a specific algorithm for calculating percentiles, there are multiple ways that one can define this. However it won't work if there are NAs so we filter them out (using na.rm=TRUE)
+quantile(df$X2010, .90, type=6, na.rm=TRUE) #90th percentile
+quantile(df$X2010, .1, type=6, na.rm=TRUE) #10th percentile
+         
+```
+
+### Plotting
+
+Graphing the distribution
+
+Lets build a histogram of the CO$_2$ emission data from 2010 using 20 bins and describe the shape of the distribution (modality and skew). We also want to label the axes appropriately and make any titles.
+
+We can use the `hist` function from the base R package.
+
+```{r}
+
+hist(df$X2010, xlab = "CO_2 Emissions (metric tons/person)", col='blue', main='2010 CO_2 Emmissions')
+
+#the first argument df$X2010 is the column of data we want in our histogram. 
+#The arguments xlab and ylab will be axis labels and the argument 
+#main will be the title at the top.  There are various other arguments as well. 
+```
+
+We can also use `ggplot2` to make the histogram. This has more complicated syntax, but it can make very nice graphs. (Note that this does produce a warning - the warning here is because there are some `NA` values).
+
+```{r}
+
+ggplot(df, aes(x = X2010)) + geom_histogram(boundary = 0, binwidth = 5) + xlab("CO_2 Emissions (metric tons/person)") + theme_bw()
+
+```
+
+We can also plot the histogram on a density scale. To do this with `hist` include the argument `freq=FALSE`. If using `ggplot` include `y=..density..` in the aes part of the function.
+
+```{r}
+
+hist(df$X2010, freq = FALSE, xlab = "CO_2 Emissions (metric tons/person)", main = " ")
+
+```
+
+```{r}
+
+ggplot(df, aes(x = X2010, y = ..density..)) + geom_histogram(boundary = 0, binwidth=5) + xlab("CO_2 Emissions (metric tons/person)") + theme_bw()
+
+```
+
+We can also control the number of bins/class groups that are used for the histogram. Try changing the number of breaks first using `breaks = number`
+
+```{r}
+
+#Set up the plot with 4 panels
+par(mfrow = c(2,2))
+
+#Use 5 bins
+hist(df$X2010, breaks = 5, xlab = "CO_2 Emissions (metric tons/person)", main = "5 bins")
+
+#Use 10 bins
+hist(df$X2010, breaks = 10, xlab = "CO_2 Emissions (metric tons/person)", main = "10 bins")
+
+#Use 15 bins
+hist(df$X2010, breaks = 15, xlab = "CO_2 Emissions (metric tons/person)", main = "15 bins")
+
+#Use 20 bins
+hist(df$X2010, breaks = 20, xlab = "CO_2 Emissions (metric tons/person)", main = "20 bins")
+
+
+```
+
+Note that the histograms with 15 and 20 breaks are the same. This is due to the way that the `hist` function treats the argument `breaks` when you only give a number. It may override your suggestion to give you a better graph.
+
+We can control the number of bins by letting `breaks` be a vector of the breakpoints.
+
+First determine the minimum and maximum values of CO$_2$ emissions in 2010 so that we don't miss any data points. Use the `summary()` function to get some quick summary values of the data.
+
+```{r}
+
+summary(df$X2010)
+
+```
+
+A range of 0 to 41 seems reasonable. We can then use the `seq( start, end, length.out = number+1)` to get a list of end points for our bins. Note that since the result will be the end points you need the number_of_bins+1.
+
+```{r}
+
+#Set up the plot with 4 panels
+par(mfrow = c(2,2))
+
+#Use 5 bins
+hist(df$X2010, breaks = seq(0,41,length.out = 6), xlab = "CO_2 Emissions (metric tons/person)", main = "5 bins")
+
+#Use 10 bins
+hist(df$X2010, breaks = seq(0,41,length.out = 11), xlab = "CO_2 Emissions (metric tons/person)", main = "10 bins")
+
+#Use 15 bins
+hist(df$X2010, breaks = seq(0,41,length.out = 16), xlab = "CO_2 Emissions (metric tons/person)", main = "15 bins")
+
+#Use 20 bins
+hist(df$X2010, breaks = seq(0,41,length.out = 21), xlab = "CO_2 Emissions (metric tons/person)", main = "20 bins")
+
+
+```
+
+The distribution looks similar using histograms with 10, 15, and 20 bins. The distribution is skewed to the right and there are several potential outliers. The histogram with 5 bins does not let us see some of the detail. It also appears that the distribution is unimodal.
+
+We could also calculate the number of bins using the rule of thumb:
+
+$\text{num bins} = \sqrt{\text{num observations}}$
+
+The summary above told us that the length of each column was 218 but we could also calculate this using the dim() function.
+
+```{r}
+dim(df)
+```
+
+This tells us that there are 218 rows and 59 columns.
+
+```{r}
+sqrt(218)
+```
+
+The rule of thumb tells us that 15 *should* be a reasonable number of bins. I won't re-create the plot since 15 was one of the examples above.
+
+Lets now make comparative histograms of the CO$_2$ emission distributions in 1960 and 2010 and compare the two distributions.
+
+First Look at the summary of the two variables:
+
+```{r}
+summary(df$X2010)
+```
+
+```{r}
+summary(df$X1960)
+```
+
+Based on this we can use the range of 0 to 41 for both. We also calculated that 15 bins should be reasonable above. I am going to plot them on the density scale as well which will make them comparable. Note though - one important aspect is that there are a lot more `NA` values in the 1960 values. We won't see this in the density scale plot but you could see it if you looked at a frequency/count histogram since there would be fewer things to count in 1960. I have also added in the `ylim=c(low, high)` to force them both to have the same y-axis limits so that the differences can be more easily viewed.
+
+```{r}
+
+par(mfrow=c(1,2))
+#Use 15 bins for 2010
+hist(df$X2010, freq = FALSE, breaks = seq(0,41,length.out = 16), xlab = "CO_2 Emissions (metric tons/person)", main = "CO_2 2010", ylim=c(0, .25))
+
+
+#Use 15 bins for 1960
+hist(df$X1960, freq = FALSE, breaks = seq(0,41,length.out = 16), xlab = "CO_2 Emissions (metric tons/person)", main = "CO_2 1960", ylim=c(0, .25))
+
+
+```
+
+Both graphs are skewed to the right (longer right tails). But 1960 is more heavily skewed with more countries having the lower values of emissions. In 1960 there were only a few countries that had values larger than 20 metric tons/person. These were more frequent in 2010.
+
+We can look at the countries with greater than or equal to 20 metric tons/person in each of 2010 and 1960 to better understand what countries had extreme values.
+
+There are many ways you could do this, one way will be to use the filter function.
+
+```{r}
+df %>% filter(X2010>=20)%>% arrange(desc(X2010))
+#use filter to get only the values at or above 20 and then arrange to 
+#list them in order of the values desc makes the largest on top. 
+```
+
+```{r}
+df %>% filter(X1960>=20) %>% arrange(desc(X1960))
+```
+
+## Problems to Submit
+
+These are questions for you to complete on your own and submit to be graded.
+
+You will investigate the nutritional content of various foods as recorded by the USDA. Specifically we will look at the Water, Fiber, carbohydrate and Protein Content.All are measured in grams per 100 grams of the food item (so they could be interpreted as a %).
+
+Specifically you will answer
+
+1.  Which of Water, Fiber, Carbohydrate and Protein appear in the smallest/largest quantities in foods?
+
+2.  What does the protein content of foods look like? Do all foods have similar protein content? What does the distribution look like and how would you describe it? What are foods with the largest Protein content
+
+3.  What does the water content of foods look like? Do all foods have similar water content? What does the distribution look like and how would you describe it?
+
+### Load Data
+
+Use `read.csv` to load the data you may have to update the file name for the appropriate path. I have also added a line of code that will replace blanks with 0.
+
+```{r}
+#Change the path as appropriate
+NutrDat = read.csv('NutritionData.csv', fileEncoding="UTF-8-BOM")
+#NutrDat = read.csv('/add the path to where you put the data/NutrDat.csv',fileEncoding="UTF-8-BOM")
+NutrDat[is.na(NutrDat)] <- 0
+```
+
+### **Question 1**
+
+**What are the variables in the data set?**
+
+**What type of variables are they?**
+
+**How many records are in the data set?**
+
+#### Answer:
+
+```{r}
+### Include appropriate code chunks for any calculations
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 2**
+
+**Which of Water, Fiber, Carbohydrate and Protein appear in the smallest/largest quantities in foods?**
+
+#### Answer:
+
+```{r}
+### Use summary to answer this question
+
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 3**
+
+**Use the rule of thumb to calculate the number of intervals that would be appropriate for a histogram describing the protein content of foods.**
+
+#### Answer:
+
+```{r}
+##
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 4**
+
+**Create a histogram for the protein content using the number of intervals calculated above. Make sure all axes are labeled appropriately.**
+
+#### Answer:
+
+```{r}
+##
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 5**
+
+**Describe the shape of the Protein histogram. What might be the reason for this shape?**
+
+#### Answer:
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 6**
+
+**What is the value Q1 where only 10% of foods in the data base have a protein content that exceeds Q1? What is the value Q2 where only 1% of foods in the data base have a protein content that exceeds Q2?**
+
+#### Answer:
+
+```{r}
+
+##
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 7**
+
+**Identify all foods where the Protein content is larger than Q2. What types of foods are these?**
+
+#### Answer:
+
+```{r}
+###
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 8**
+
+**Create a histogram for the water content using the number of intervals calculated above (the number of bins will be the same as Protein but you may have to make the range different). Make sure all axes are labeled appropriately. Describe the shape of the Water histogram. What might be the reason for this shape?**
+
+#### Answer:
+
+```{r}
+###Create the histogram
+###
+
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 9**
+
+**Identify all foods where the Water content is greater than or equal to 99%. Briefly describe what these foods are. What percentage of foods in the database have Water content equal to or above 99%?**
+
+#### Answer:
+
+```{r}
+###
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
+
+### **Question 10**
+
+**Identify all foods where the Water content is less than 1%. Briefly describe what these foods are. What percentage of foods in the database have Water content that is less than 1%?**
+
+#### Answer:
+
+```{r}
+###
+```
+
+Delete this and write, in complete sentences, summarizing your answer to the questions.
