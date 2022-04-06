@@ -407,8 +407,6 @@ hist(df$X2010, freq = FALSE, breaks = seq(0,41,length.out = 16), xlab = "CO_2 Em
 
 #Use 15 bins for 1960
 hist(df$X1960, freq = FALSE, breaks = seq(0,41,length.out = 16), xlab = "CO_2 Emissions (metric tons/person)", main = "CO_2 1960", ylim=c(0, .25))
-
-
 ```
 
 Both graphs are skewed to the right (longer right tails). But 1960 is more heavily skewed with more countries having the lower values of emissions. In 1960 there were only a few countries that had values larger than 20 metric tons/person. These were more frequent in 2010.
@@ -463,10 +461,10 @@ NutrDat[is.na(NutrDat)] <- 0
 #### Answer:
 
 ```{r}
-### Include appropriate code chunks for any calculations
+str(NutrDat)
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The data set with 8618 records contains the variables **NDB_No** (type `int`), **Shrt_Desc** (type `chr`), **Water** (type `num`), **Kcal** (type `int`), **Protein** (type `num`), **Carbohydrat** (type `num`), **Fiber** (type `num`), **Sugar** (type `num`), and **Calcium** (type `num`).
 
 ### **Question 2**
 
@@ -475,11 +473,10 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-### Use summary to answer this question
-
+summary(NutrDat)
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+**Water** appears as the largest quantity (compared to the other variables) in foods. Meanwhile, **Fiber** appears the least.
 
 ### **Question 3**
 
@@ -488,10 +485,11 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-##
+q3 = (round(sqrt(count(NutrDat) - (is.na(NutrDat$Protein)))))$n
+q3
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The rule of thumb states that the best number of intervals for a data set is the square root of the number of observations. In this case, it is $\sqrt{8618}=92.8331837222$ (rounded to $93$).
 
 ### **Question 4**
 
@@ -500,10 +498,11 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-##
+# This solution uses a variable (q3) defined in Question 3
+hist(NutrDat$Protein, breaks = q3, xlab = paste("% grams/food item (", q3, " bins)", sep = ""), main = "Nutrition Protein")
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+This histogram contains **93 bins** and represents the **Nutrition Protein** (% grams/food items).
 
 ### **Question 5**
 
@@ -511,7 +510,7 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 
 #### Answer:
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The Protein histogram is **bimodal** with a **right skew**. This is because the major of foods either no protein, or roughly 20% protein by gram.
 
 ### **Question 6**
 
@@ -520,11 +519,13 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-
-##
+Q6_q1 = quantile(NutrDat$Protein, (1 - 0.1), type=6, na.rm=TRUE) # 90th percentile (10% above)
+Q6_q1
+Q6_q2 = quantile(NutrDat$Protein, (1 - 0.01), type=6, na.rm=TRUE) # 99th percentile (1% above)
+Q6_q2
 ```
+The Protein value $26.53$ is only exceeded by $10\%$ of foods. And, the value $35.6162$ is only exceed by $1\%$ of foods.
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
 
 ### **Question 7**
 
@@ -533,10 +534,16 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-###
+Q7_all = NutrDat %>% filter(Protein>=Q6_q2)
+# Q7_all
+
+Q7_types = Q7_all$Shrt_Desc
+Q7_types
+
+length(Q7_types)
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+There are a total of $86$ food which have a Protein content larger than Q2. They generally tend to be **meats** (beef, pork, fish), **diary** products (cheese, milk, etc.), and **soy**.
 
 ### **Question 8**
 
@@ -545,12 +552,12 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-###Create the histogram
-###
+# This solution uses a variable (q3) defined in Question 3
+hist(NutrDat$Water, breaks = q3, xlab = paste("% grams/food item (", q3, " bins)", sep = ""), main = "Nutrition Water")
 
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The histogram of Nutrition Water Content is **multimodal** with an uneven distribution (seems to be neither right/left skewed, nor symetrical).
 
 ### **Question 9**
 
@@ -559,10 +566,13 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-###
+Q9_water99 = NutrDat %>% filter(Water >= 99)
+Q9_water99
+
+length(Q9_water99) / length(NutrDat$Water) * 100
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The food which contains $99\%$ or greater of Water content is generally **beverages** such as tea, water, and carbonated beverages. Only roughly $0.104\%$ of foods fall under the category of $99\%$ of greater of Water content.
 
 ### **Question 10**
 
@@ -571,7 +581,10 @@ Delete this and write, in complete sentences, summarizing your answer to the que
 #### Answer:
 
 ```{r}
-###
+Q10_water1 = NutrDat %>% filter(Water < 1)
+Q10_water1
+
+length(Q10_water1) / length(NutrDat$Water) * 100
 ```
 
-Delete this and write, in complete sentences, summarizing your answer to the questions.
+The foods which contain less than $1\%$ of water content generally are fats and oils. Only about $0.104\%$ of foods contain less than $1\%$ of water content.
