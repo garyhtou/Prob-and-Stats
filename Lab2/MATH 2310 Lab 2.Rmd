@@ -1,0 +1,632 @@
+---
+title: "MATH 2310 Lab 2"
+author: Gary Tou
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+## Introduction
+
+The same instructions as Lab 1 apply.
+
+In this lab we will learn how to use R to use the built in distributions. We will plot distributions, evaluate probability mass functions and density functions as well as cummulative distribution functions. We will then use these functions to solve some problems.
+
+## In-Class Exploration
+
+### Import libraries
+
+No new libraries are needed, but you will still need to run `library(tidyverse)`
+
+```{r, results=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+```
+
+### Density Functions
+
+R has four built-in functions for each probability distribution, beginning with a "d", "p", "q", or "r" and followed by the name of the distribution. For example, for a binomial distribution with 10 trials and success probability 1/3,
+
+-   The density function (discrete or continuous) uses "d"
+
+-   The cumulative distribution function uses "p"
+
+-   A quantile function or the the inverse of the cdf is given by "q". This is the inverse or the cdf. It can be very useful for finding Z scores!
+
+-   A random sampling function uses "r" and randomly generates a given number of points from the distribution.
+
+In each distribution you will also have to input the parameters for that distribution.
+
+#### Binomial Distribution
+
+For the binomial distribution with parameters n and pi these take the form:
+
+-   `dbinom(x,n,pi)` - gives the mass function evaluated at x with parameters n and pi. This is the $P(X=x)$.
+
+-   `pbinom(t,n,pi)` - gives the cumulative distribution function evaluated at t with parameters n and pi. This is $F(t)= P(X\leq t)$.
+
+    Unlike the continuous counterparts be careful using this because $P(X<t)$ is different than $P(X\leq t)$. In fact, $P(X<t)=F(t-1)$ and $P(X\leq t)=F(t)$.
+
+-   `qbinom(quantile,n,pi)` - gives the quantile for the distribution. This is t such that $P(X\leq t)=q$. It is the inverse of the *F(t)*.
+
+-   `rbinom(k,n,pi)` - gives a list of k objects sampled from the density function.
+
+You can always find information about functions like this by typing `?function` into the console where function is whatever you are interested in. Try typing in ?rbinom into the console and see what it tells you.
+
+Some sample usage:
+
+Probability mass function (pmf), this calculates the probability that X = 5 when n=10 and pi=1/3
+
+```{r}
+dbinom(5,10,1/3)
+```
+
+Cumulative distribution function (cdf): this example calcuates the probability X <= 5.
+If you want the probability that X <5 then you have to use pbinom(4, 10, 1/3) since for a discrete random variable the probability of being <5 is the same as being <=4. 
+
+```{r}
+pbinom(5,10,1/3)
+```
+
+ Quantile function: The value of t such that the percent of the distributionthat lies below t is equal to the input. i.e., the inverse of the cdf. This example calculates the 25th percentile.  This is the value where you expect to see smaller values 25% of the time. 
+
+```{r}
+qbinom(.25,10,1/3)
+```
+
+Random generation: e.g., generate 20 data points from the distribution. Each value is randomly selected so you can ge repeats. If you were to run this for a very large number of points (increase 20 to something very big) and then create a histogram from the data, the heights of the bars should be very close to the values you'd get using dbinom -  We will see this later.
+```{r}
+rbinom(20,10,1/3)
+```
+
+Lets check some of these to see if they make sense. If we have n=10 and pi =1/3 then `dbinom(5, 10, 1/3)` should be ${10 \choose 5} *\left(\frac{1}{3}\right )^5\left(\frac{2}{3}\right)^5$. You can use the `factorial()` function for evaluating 10 choose 5 or you can use the built in `choose(,)` function. You should use the built in fucntions above, this is just to check that they give the correct answers.
+
+```{r}
+#Check dbinom(5, 10, 1/3) using formula.
+choose(10,5)*(1/3)^5*(2/3)^5
+
+#Check pbinom(5, 1, 1/3) matches the density by adding up the density values from 0 to 5.
+dbinom(0, 10, 1/3)+dbinom(1, 10, 1/3)+dbinom(2, 10, 1/3)+dbinom(3, 10, 1/3)+dbinom(4, 10, 1/3)+dbinom(5, 10, 1/3)
+
+```
+
+These agree with what we saw from the built in functions. If we are sampling from the distribution we should be able to sample and create a histogram/bar chart which should have heights very similar to the probability mass function.
+
+```{r}
+#Create the sample
+#Note that this will produce a different sample every time you run it!  There is a way to force it to be the same every time though. Here we have 1000 samples from the binomial distribution. Note that all the values should be between 0 and 10. 
+BinomSample = rbinom(1000,10,1/3)
+
+#First we can create a relative frequency table from the sample
+RelFreq = prop.table(table(BinomSample))
+#Print the Table to see that this just calculated the relative frequency values
+RelFreq
+
+
+#Compare this to a plot of the actual distribution
+
+#Create the sequence of integers from 0 to 10
+X= seq(0,10, 1)
+
+#Evaluate the built in density on each of the integers
+Y = dbinom(X, 10, 1/3)
+
+#Join X and Y into a single table and then look at it.
+BinomData = data.frame(X,Y)
+#View the table
+round(BinomData, 5)
+
+par(mfrow = c(1,2))
+#Plot the values from the table (the type = h is a histogram)
+plot(X, Y, type = 'h',  main='Actual Binomial Distribution\n (n=10, pi =1/3)',
+     ylab='Probability',
+     xlab ='# Successes',
+     lwd=15)
+#Look at the histogram from the sample
+hist(BinomSample, breaks = seq(0, 11, 1)-0.5, freq=FALSE,main= 'Bar Chart for Binomial n=10,\n pi=13 sampled 100 times.')
+```
+
+#### Other Discrete Distributions
+
+Similar to the binomial, other discrete distributions work the same with with 'd', 'p', 'q', and 'r'. We have talked about the Poisson in class but there are other built in distributions as well. *Use the help function to see what parameters are needed for each function*.
+
+1.  **Binomial**
+
+-   Used for, X = Number of success in n trials with pi prob of success
+-   Possible Values 0,...,n
+-   `_binom()` where \_ is d,p,q, r
+
+2.  **Poisson**
+
+-   Used for, X = Count occurrences in a fixed time or spacial interval under certain conditions
+-   Possible Values 0 to $\infty$
+-   `_pois()` where \_ is d,p,q, r
+
+3.  **Multinomial**
+
+-   `_multinom()` where \_ is d,p,q, r
+
+4.  **Geometric**
+
+-   `_geom()` where \_ is d,p,q, r
+
+5.  **Negative Binomial**
+
+-   `_nbinom()` where \_ is d,p,q, r
+
+6.  **Hyper Geometric**
+
+-   `_hyper()` where \_ is d,p,q, r
+
+#### Exponential Distributions
+
+Similarly to the discrete distributions, we have the similar logic for the exponential except now 'd' is the continuous density function and can be plotted over an interval.
+
+Here we use the `curve()` function to plot the exponential pdf for several different lambdas (denoted 'rate' in the code.)
+
+```{r}
+#plot PDF curves
+#Plots first curve for lambda =2
+curve(dexp(x, rate = 2), from=0, to=10, col='orange',ylab='f(x)', main ='pdf for Exponential Distribution')
+
+#adds more curves for additional lambdas (add = TRUE ads to the plot instead of starting a new one)
+curve(dexp(x, rate = .5), from=0, to=10, col='blue', add= TRUE)
+curve(dexp(x, rate = 1), from=0, to=10, col='red', add=TRUE)
+
+#Adds a grid for reference
+grid(nx = NULL, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+#add legend
+legend(6.5, 1.5, legend=c("lambda = .5", "lambda = 1", "lamda = 2"),
+       col=c("blue", "red", "orange"), lty=1, cex=1.2)
+```
+
+Note how the shape changes as lamda increases/decreases.
+
+Similarly you could plot the CDF.
+
+```{r}
+#plot PDF curves
+#Plots first curve for lambda =2
+curve(pexp(x, rate = 2), from=0, to=10, col='orange',ylab='F(t)', xlab ='t', main ='CDF for Exponential Distribution')
+
+#adds more curves for additional lambdas (add = TRUE ads to the plot instead of starting a new one)
+curve(pexp(x, rate = .5), from=0, to=10, col='blue', add= TRUE)
+curve(pexp(x, rate = 1), from=0, to=10, col='red', add=TRUE)
+
+#Adds a grid for reference
+grid(nx = NULL, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+#add legend
+legend(6.5, .5, legend=c("lambda = .5", "lambda = 1", "lamda = 2"),
+       col=c("blue", "red", "orange"), lty=1, cex=1.2)
+```
+
+Looking at the graph of the CDF how would you identify the 50th percentile?
+
+How is the graph of the CDF related to the pdf?
+
+Why does the CDF approach 1 as t increases?
+
+You can also create a histogram of sample data and then overlay a distribution - it should match pretty close if you sample enough.
+
+```{r}
+#Sample 1000 times for lambda =2
+z <- rexp(1000,rate = 2)
+# Make a histogram!
+hist(z, prob = TRUE, breaks=20, main='Histogram of sample from exp distribution with \n actual distribution plotted in red.', xlab='x')
+#Overlay the actual distribution
+curve(dexp(x, rate = 2), col = 2, lty = 2, lwd = 2, add = TRUE)
+```
+
+These should be pretty close because the sample data is *generated from* the distribution plotted. In general this will not be the case. You would create a histogram from data from an unknown distribution, decide what *type* of distribution makes sense, and then *choose/fit* the parameters to match it as close as possible. There are also algorithms to choose the best parameter as well.
+
+You can also use the `pexp` function to calculate probabilities of ranges, this is equivalent to integrals of `dexp`. Since this is continuous we can be pretty lax about $<$ vs $\leq$ etc.
+
+Suppose we have an exponential distribution with $\lambda =2$ and we want the probability that the variable is between 0.5 and 3. We know from class that this can be evaluated by:
+
+$$
+P(0.5<X<3) = P(X<3)-P(X<.5)=F(3)-F(.5)=\int_.5^32e^{-2x}dx=-e^{-6}-\left(-e^{-1}\right)
+$$
+
+Method 1 Integrate `dexp`:
+
+```{r}
+#Take the integral of dexp from 0.5 to 3
+
+# Fist define the function and store it as the object f
+f<-function(x) dexp(x,rate=2)
+
+#then integrate the function (you can use Inf in the range!)
+integrate(f, 0.5, 3)
+```
+
+Method 2 Use `pexp` (remember pexp is the built in function for the cdf or F):
+
+```{r}
+#Take the integral of dexp from 0.5 to 3
+pexp(3, 2)-pexp(0.5,2)
+```
+
+Method 3 Use the known values:
+
+```{r}
+#The exponential e^x is denoted exp(x)
+-exp(-6)-(-exp(-1))
+```
+
+These all produce the same answer as expected. The method using pexp() is the easiest though (just like we used F(x) in class when we had a formula for it).
+
+#### Normal Distributions
+
+Everything we just did for exponential distribution also applies to how the normal distributions work in R. You can also use the `curve()` function like we showed in the exponential case. See the bonus content for other ways of plotting.
+
+```{r}
+#plot PDF curves
+#Plots first curve
+curve(dnorm(x, mean = 2, sd=.5), from=-2, to=10, col='blue',ylab='y', main ='density for Normal Distribution')
+
+#adds more curves for additional parameter combinations (add = TRUE ads to the plot instead of starting a new one)
+curve(dnorm(x, mean = 2, sd=1), from=-2, to=10, col='orange', add= TRUE)
+curve(dnorm(x, mean = 4, sd=1), from=-2, to=10, col='red', add=TRUE)
+
+#Adds a grid for reference
+grid(nx = NULL, ny = NULL, lty = 2, col = "gray", lwd = 1)
+
+#add legend
+legend(5, 0.8, legend=c("mu = 2, sigma=1", "mu = 2, sigma=.5", "mu = 4, sigma=1"),
+       col=c("blue", "red", "orange"), lty=1, cex=1.2)
+```
+
+What happens when $\sigma$ gets smaller/larger? What happens when $\mu$ gets smaller/larger?
+
+We can get z scores for normal random variable using the `qnorm` function
+
+```{r}
+#Z scores are all standard normal so mean =0, sd=1
+#This is the 25th percentile or the value where you would have accumulated 25% of your distribution. 
+qnorm(.25, mean=0, sd=1)
+
+#0 and 1 are the defaults too so you can just ignore them
+
+qnorm(.25)
+
+
+```
+
+Since the standard normal is symmetric the z score for .75 should be the same as the 25th percentile with the opposite sign. Lets check that:
+
+```{r}
+#Z score for .75
+qnorm(.75)
+
+```
+
+Lets plot qnorm and pnorm to see that they are inverse functions.
+
+```{r, warning=FALSE}
+x <- seq(-10,10,length.out=1000)
+
+#evaluate the exponential for different rates on the sequence of values
+y <- pnorm(x)
+y2 <- qnorm(x)
+y3<-x
+
+#type = "l" is a line plot. Check out ?plot to see other options
+#use the plot function. To add additional line plots use the lines function after the initial plot. If you have three plot lines you'll get three plots instead of all three on the same plot. 
+
+plot(x, y, type="l", col='orange', main= 'normal cdf and \n quantile function', ylim=c(-1,1), xlim<-c(-1,1), panel.first = grid())
+lines(x[!is.na(y2)], y2[!is.na(y2)], type="l", col='red') # Use lines to add to
+lines(x, y3, type="l", col='blue') # Use lines to add to
+
+legend(-1, 1, legend=c("y=x", "quantile function", "cdf"),
+       col=c("blue", "red", "orange"), lty=1, cex=1.2)
+```
+
+Note how the orange and the red curves (the cdf and the quantile function) are reflections over the blue line where y=x. This is the property for inverse functions.
+
+#### Other Continuous Distributions
+
+Similar to the binomial other discrete distributions work the same with with 'd', 'p', 'q', and 'r'. We have talked about the Poisson in class but there are other built in distributions as well. *Use the help function to see what parameters are needed for each function*.
+
+1.  **Exponential**
+
+-   Used for, X = time between events with given rate under certain conditions
+-   Possible Value $[0,\infty)$
+-   `_exp(, rate)` where \_ is d,p,q, r
+
+2.  **Normal**
+
+-   "bell curve", used in many applications and we will see more as the course goes on.
+-   Possible Value $(-\infty,\infty)$
+-   `_norm(, mean,sd)` where \_ is d,p,q, r
+
+3.  **LogNormal**
+
+-   Used in many applications and is, as the name indicates, the log of a normal random variable.
+-   Possible Value $(0,\infty)$
+-   `_lnorm(, mu,sigma)` where \_ is d,p,q, r  note that mu and sigma are NOT the mean and standard deviation but are the mean and standard deviation of the corresponding normal. 
+
+4.  **Weibull**
+
+-   Flexible in many situations
+-   Possible Value $[0,\infty)$
+-   `_weibull(, shape,scale)` where \_ is d,p,q, r
+
+5.  **Uniform**
+
+-   X is equally likely to be any value between min and max
+-   possible values $[min, max]$
+-   `_unif(, min, max)` where \_ is d,p,q, r
+
+6.  **Chi-Squared**
+
+-   Used in hypothesis testing
+-   Possible Value $[0,\infty)$
+-   `_chisq(, df)` where \_ is d,p,q, r
+
+7.  **Students t dist**
+
+-   Used in hypothesis testing and calculating confidence intervals.
+-   Possible Values: all real numbers $(-\infty, \infty)$
+-   `_t(, df)` where \_ is d,p,q, r
+
+8.  **F distribution**
+
+-   Used in hypothesis testing
+
+-   Possible Value $[0,\infty)$
+
+-   `_f()` where \_
+
+    ##  {#FirstProblem .tabset}
+
+## Problems to Submit
+
+### Section 1 Intro
+
+In this section you will use some sample data and guess/estimate what the underlying distribution is based on properties of the sample. This is a fundamental concept in statistics and there are many advanced ways to answer these kinds of problems. However for the purpose of this problem, you will just use a histogram and what you know of the families of distributions we have discussed to estimate/make an educated guess what the family and parameters are.
+
+### Section 1 Import Data
+
+Adjust your path as necessary. The data set contains a single column of data which represent temperature measurements.
+
+```{r}
+df= read.csv('DailyTemp.csv',fileEncoding="UTF-8-BOM")
+```
+
+### Section 1 Question 1
+
+**Create a histogram of the temperature values on the density scale, select the bins so that the shape of the distribution is highlighted. Show a list of the boundary values of your bins.**
+
+#### Answer
+
+```{r}
+# Use to calculate the bin widths or bin numbers
+S1Q1_bins = round(sqrt(length(df$temp)))
+S1Q1_bins
+```
+
+```{r}
+#use the seq function to display the endpoints of your bins 
+S1Q1_min = min(df$temp)
+S1Q1_max = max(df$temp)
+seq(S1Q1_min, S1Q1_max, (S1Q1_max - S1Q1_min)/S1Q1_bins) # is there a better way to do this?
+```
+
+```{r}
+# Build your histogram
+hist(df$temp, breaks = S1Q1_bins, freq=FALSE,main= paste('Density Histogram for Temp,\nwith', S1Q1_bins, 'bins'), xlab = "Degrees")
+```
+
+By using the `sqrt` of num entires formula, I am able to determine the best
+number of bins. Afterwards, that information is provided to the `hist` function
+to render a density histogram of the `Temp` column.
+
+### Section 1 Question 2
+
+**Describe the shape of the histogram in words.**
+
+#### Answer
+
+This histogram is single modal and appears to be fairly symetrical. It seems to
+be a normal distribution.
+
+### Section 1 Question 3
+
+**There are sophisticated ways of testing if certain families are appropriate for a given sample and we will talk about some later in the course. For now, I want you to use what you know about the shapes of density functions to make an educated guess as to which family of distributions the data comes from. State what your guess is and why.**
+
+#### Answer
+
+**Normal distribution**! I believe this is a normal distribution because the
+histogram is fairly uniform and symmetrical. The placement of the data follows a
+"bell curve".
+
+### Section 1 Question 4
+
+**There are some sophisticated mathematical techniques we will explore later to determine parameters for a family to best fit some sample data that potentially came from that distribution. However, in this case there are some simple ways of coming up with what the parameters might be (think about what the names of the parameters are for the family you have chosen). Use what you know to come up with potential parameters for the underlying distribution. There are some built in functions in R that you can look up that might be helpful. (mean and sd are functions that might be helpful)**
+
+#### Answer
+
+```{r}
+S1Q4_mean = mean(df$temp)
+S1Q4_sd = sd(df$temp)
+
+paste("Mean:", S1Q4_mean)
+paste("Standard Deviation:", S1Q4_sd)
+```
+
+By using the `mean` and `sd` functions, we can easily calculate the mean
+and standard deviation of the *temp* data. Both **mean** and **standard
+deviation** serve as parameters to a normal distribution.
+
+### Section 1 Question 5
+
+**Using the estimated parameters calculated in the previous question. re-plot the histogram of the sample data but now add the curve of the density function for the distribution you decided on overlayed on top of the histogram. Does the curve fit your data? If not why?**
+
+#### Answer
+
+```{r}
+#Make your histogram and the density function
+hist(df$temp, breaks = S1Q1_bins, freq=FALSE,main= paste('Density Histogram for Temp,\nwith', S1Q1_bins, 'bins'), xlab = "Degrees")
+curve(dnorm(x, mean=S1Q4_mean, sd=S1Q4_sd), col='red', add=TRUE)
+```
+
+Tada! The normal distribution which is overlayed on top of the previous
+histogram closely fits the data. The curve run very close to the bars.
+
+### Section 2 Intro
+
+**In this problem you will use the built in functions to answer some questions about a Poisson Process.**
+
+**Suppose that on average a certain store serves 15 customers per hour during their hours of operation. Assume that all assumptions of a Poisson Process hold. Use the built in functions to answer the following question.**
+
+**When answering the questions**
+
+-   **State clearly in words the random variable you are considering, what the parameters are and how the question translates into a statement about the probability of that variable.**
+
+-   **Show the calculations to evaluate the probability.**
+
+-   **State in words what the final answer is.**
+
+### Section 2 Question 1
+
+**What is the probability that the store swill serve between 10 and 20 customers (inclusive) in a particular 2 hour period?**
+
+-   State the random variable you would use in words
+
+    $X = \text{The store serving between 10 and 20 customers (inclusive) in a 2 hour period}$
+
+-   State the type of random variable and the parameters.
+
+    Poission distribution.
+
+    $\lambda = 15 \times 2 = 30$ (Average number of customers in a 2 hour period)
+
+-   State the probability you want to compute.
+
+    $P(10 \ge X \ge 20)$
+
+-   Use the built in functions to calculate that probability.
+
+-   State clearly what the final answer is in words.
+
+#### Answer
+
+```{r}
+# Put your calculations here.
+S2Q1_lambda = 15*2 # 15/hour * 2 hours
+ppois(20, S2Q1_lambda) - ppois(10-1, S2Q1_lambda) # Minus 1 because it's inclusive
+```
+
+There is a 3% chance that the store will serve between 10 and 20 customers (inclusive) within a 2 hour period.
+
+### Section 2 Question 2
+
+**At noon, the shop owner wonders how long it will be until the next customer arrives. What is the probability that the next customer will arrive in less than 3 minutes?**
+
+-   State the random variable you would use in words
+
+    $X = \text{Time until the next customer arrives}$
+
+-   State the type of random variable and the parameters.
+
+    Exponential.
+    
+    $\lambda = 15$
+
+-   State the probability you want to compute.
+
+    $P(x < \dfrac{3}{60})$
+    
+    $\frac{3}{60}$ because that is 3 minutes represented in hours.
+
+-   Use the built in functions to calculate that probability.
+
+-   State clearly what the final answer is in words.
+
+#### Answer
+
+```{r}
+S2Q1_lambda = 15
+pexp(3/60, rate=S2Q1_lambda)
+```
+
+The chance that the next customer will arrive in less than 3 minutes is $52.76\%$.
+
+### Section 3 Intro
+
+**In this problem you will use the built in functions to answer some questions that combine two types of random variables.**
+
+**Suppose that you know that a certain chemical process releases H20 as one of the outputs. Each time the process is run the amount of H20 in ml is known to follow a normal distribution with mean 20 and standard deviation of 2. Additionally, the processes is considered defective if either more than 21.2 ml is released or if less than 18.6 ml is released.**
+
+### Section 3 Question 1
+
+**What is the probability that when the process is run once that it will not be considered defective?**
+
+-   State the random variable you would use in words
+
+    $X = \text{A single run of the process is not defective}$1
+
+-   State the type of random variable and the parameters.
+
+    Normal Distribution
+    
+    $\text{mean} = 20\\
+    \text{sd} = 2$
+
+-   State the probability you want to compute.
+
+    $P(18.6 \gt X \gt 21.2)$
+
+-   Use the built in functions to calculate that probability.
+
+-   State clearly what the final answer is in words.
+
+#### Answer
+
+```{r}
+S3Q1_mean = 20
+S3Q1_sd = 2
+S3Q1_output = pnorm(21.2, S3Q1_mean, S3Q1_sd) - pnorm(18.6, S3Q1_mean, S3Q1_sd)
+S3Q1_output
+```
+
+From a single run, there is a $48.38\%$ chance that the process was not defective.
+
+### Section 3 Question 2
+
+**Suppose that the process is run 365 times (once each day for a year). What is the probability that there will be at least 160 successful runs of the process. Hint - be careful about \< vs \<= with discrete distributions**
+
+-   State the random variable you would use in words
+
+    $X = \text{at least 160 of 365 runs are successful}$
+
+-   State the type of random variable and the parameters.
+
+    Binomial Distribution.
+    
+    $n = 365\\
+    \pi = 0.4837832$ (This was calculated above as a part of Section 3, Question 1)
+
+-   State the probability you want to compute.
+
+    $P(X \ge 160)$
+
+-   Use the built in functions to calculate that probability.
+
+-   State clearly what the final answer is in words.
+
+#### Answer
+
+```{r}
+S3Q2_n = 365
+S3Q2_pi = S3Q1_output
+
+1 - pbinom(160-1, S3Q2_n, S3Q2_pi)
+```
+
+There is a $96.34\%$ chance that at least 160 of 365 runs are successful.
