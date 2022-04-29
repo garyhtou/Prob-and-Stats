@@ -1,0 +1,421 @@
+---
+title: "MATH 2310 Lab 3"
+author: Gary Tou
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+## Introduction
+
+In this lab we are going to learn how to use some of the regression and summary tools in R by exploring the mtcars data set. We will build box plots for variables, analyze the shape of the distribution and identify extreme values. We will then explore modeling the miles per gallon of a vehicle based on the horsepower and other variables.
+
+## Import Libraries
+
+This lab will use the library `ggplot2` to explore our data. We also will use reshape
+
+```{r results=FALSE, message=FALSE, warning=FALSE}
+#install.packages('tidyverse', 'GGally','rstatix','Stat2Data','ggpubr') #Run this code once.
+library(tidyverse)
+library(rstatix)
+library(Stat2Data)
+library(ggpubr)
+library(GGally)
+```
+
+## Load the Data
+
+For this lab we are going to use a built in data set from R.
+
+```{r}
+df = mtcars
+```
+
+## Explore the data
+
+**Look at the raw data**
+
+What does the R documentation about this data set say?
+
+```{r}
+#?mtcars  # Don't run this in a knitted document
+```
+
+This data has information on several variables like miles per gallon and the weight for 32 different vehicles from the 1973/74 model years. It comes from the magazine Motor Trend.
+
+What do the first few rows of the data look like?
+
+```{r}
+#Use head to examine the first few rows
+head(df)
+#use head to examine the frirst few rows with the largest mpg
+head( df %>% arrange(desc(mpg)) )
+
+#use head to examine the first few rows with the lowest mpg
+head( df %>% arrange(mpg) )
+```
+
+What data types are used?
+
+```{r}
+#Use str()
+str(df)
+```
+
+### **Question 1**
+
+**Which variables are numeric/categorical and what are their subcategory?**
+
+#### Answer:
+
+- Numerical:
+  - Discrete: `disp`, `gear`, `carb`, `cyl`
+  - Continuous: `mpg`, `hp`, `drat`, `wt`, `qsec`
+- Categorical
+  - Nominal: `vs` and `am`
+  - Ordinal: none
+
+Change categorical variables to factors. We could also turn the discrete numerical values into ordered factors.
+
+```{r}
+#Change any categorical variables to factors using as.factor.
+df$vs <- as.factor(df$vs) #This changes the column to a factor and then puts it back in the column with the same name.
+df$am <- as.factor(df$am)
+df$cyl <- as.factor(df$cyl)
+str(df)
+dim(df)
+```
+
+Look at a summary of each variable.
+
+```{r}
+#Use summary() to display the five number summary - note that the value of quantile for the five number summary will sometimes not match
+# summary(df)
+
+for (i in 1:11){ #you could just run summery(df) but I find that hard to read .This is a for loop that display the name and then the summary for that column
+  print(names(df)[i])
+  
+  print(summary(df[,i]))
+}
+```
+
+## Single variable investigation
+
+Plot a Histogram of mpg, wt, qsec, drat, hp
+
+```{r}
+#filter the data to just the columns you want and then make a histogram for each column (Use a loop if you want)
+
+histdat = df %>% select(mpg, wt, qsec, drat, hp) # select only the columns you want
+
+for (i in 1:5){   # For loop that will create the histogram for each column.  histdat[,i] is the ith column of the table histdat
+  hist(histdat[,i], breaks= 6, freq=FALSE
+       , main=paste0(names(histdat)[i])
+       , xlab=paste0(names(histdat)[i]))
+}
+
+
+#Show the bar charts for the categorical/Discrete Variables.
+
+barchartdata = df %>% select(cyl, am,vs )
+for (i in 1:3){   # For loop that will create the bar chart for each column
+  g<-ggplot(barchartdata, aes_string(x=names(barchartdata)[i]))   +geom_bar()
+  print(g)
+}
+```
+
+### **Question 2**
+
+**What observations can you make from looking at the histograms? Do they look symmetric? Do they look Skewed?**
+
+#### Answer:
+
+- **mpg:** right skewed, bimodal
+- **wt:** symmetrical, bimodal
+- **qsec:** right skewed, unimodal
+- **drat:** kinda symmetrical, unimodal
+- **hp:** heavily right skewed, unimodal
+
+Make box plots for each of those variables.
+
+```{r}
+#Make a loop that makes a box
+for (i in 1:5){  #for loop that makes a box plot for each. histdat[, i] is the ith column.
+  boxplot(histdat[,i] 
+       , main=paste0(names(histdat)[i])
+       , xlab=paste0(names(histdat)[i])
+       , horizontal = TRUE
+       )
+}
+```
+
+### **Question 3**
+
+**What observations can you make from looking at these box plots?**
+
+#### Answer:
+
+- **mpg:** right skewed
+- **wt:** right skewed, two outliers
+- **qsec:** left skewed, one outlier
+- **drat:** right skewed
+- **hp:** right skewed, one outlier
+
+
+Find the wt outliers:
+
+```{r}
+#Find the interquartile range - new functions include IQR(), quantile(), identify_outliers()
+IQR_WT = IQR(df$wt) #Calculates the IQR
+print(IQR_WT) #prints the value you found above
+
+Q1 = quantile(df$wt,.25,type=6) #Finds the first quantile - type 6 is the method
+Q3 = quantile(df$wt,.75,type=6) #Find the third quantile
+print(Q1) #prints what we stored in Q1
+print(Q3) #prints what we stored in Q3
+
+df %>% filter(wt>Q3+1.5*IQR_WT) %>% arrange(wt)  # Filters things above Q3+1.5*IQR
+df %>% filter(wt<Q1-1.5*IQR_WT) %>% arrange(wt) #Filters things below Q1-1.5IQR
+
+# Use a built in function
+df %>% identify_outliers(wt) # short cut that displays all records whhere the wt value is an outlier
+
+df %>% identify_outliers(hp)
+```
+
+### **Question 4**
+
+**What are the outliiers for WT? What, if any, observations can you make about the outliers?**
+
+#### Answer:
+
+There are 3 outliers for `wt`:
+
+- Cadillac Fleetwood
+- Lincoln Continental
+- Chrysler Imperial
+
+All 3 outliers lie above Q3. There are none below Q1. these outliers also have similar `cyl` and `disp` compared to other observations.
+
+## Comparing two variables
+
+Compare the box plot and histogram of mpg for different cylinders. (mpg is numeric continuous and cyl is numeric discrete)
+
+```{r}
+#Use ggplot to create a box plot - here we have to put the categorical/discrete variable as X
+ggplot(df,  aes(x=as.factor(cyl), y = mpg, color=as.factor(cyl))) + #Format (dataset, aes(x= xvaraible, y=yvariable, color= color variable))
+    geom_boxplot() + #plot type
+    geom_jitter(alpha=.3) + #add jitter, alpha controls the opacity of the jitter points
+    theme_minimal()
+```
+
+```{r}
+#Use ggplot to create this histogram.  y=..density.. says you want the density scale.  facet grid says create a separate plot for each value of cyl
+ggplot(df,  aes( x = mpg,y=..density.., color=as.factor(cyl)))+ 
+    geom_histogram(binwidth = 2.5) +
+    facet_grid(as.factor(cyl)~.)+ #this creates separate plots where the stuff on the left is the rows. if you want them on the columns instead you would put .~as.factor(cyl)
+    theme_minimal()
+```
+
+### **Question 5**
+
+**What observations can my make about the relationship of the number of cylinders and the miles per gallon? Which number of cylinders has the greatest variability in the values of miles per gallon?**
+
+#### Answer:
+
+Vehicles that have a higher number of cylinders (`cyl`) generally have lower miles per gallon (`mpg`).
+Vehicles with $4$ cylinders have the greatest variability in the values of `mpg` (higher `IQR`).
+$8$ cylinders is the only category that has outliers (it has two).
+
+Make a Scatter Plot of mpg and hp (two continuous numeric variables):
+
+```{r}
+#Use ggplot to create the scatter plot. 
+ggplot(df,  aes(x = hp,y=mpg))+  #Format (dataset, aes(x= xvaraible, y=yvariable))
+    geom_point()+ # this says to plot points
+    theme_minimal() # This is optional
+```
+
+### **Question 5**
+
+**What observations can you make from the scatterplot?**
+
+#### Answer:
+
+There is a negative correlation between `mpg` and `hp`. Generally, as `hp` increases, `mpg` decreases. It seems to be somewhat linear, but not completely linear. A regression may be better suited.
+
+Calculate the correlation between hp and mpg
+
+```{r}
+#Use cor() to calculate the correlation.
+cor(df$mpg, df$hp) #two columns of data you want to calculate the correlation of. 
+
+cor( df%>% select_if(is.numeric) ) # Shows a matrix of all correlations - not that the correlation of a variable with itself is 1 and that the order doesn't matter. 
+```
+
+### **Question 6**
+
+**What observations can you make from the correlation?**
+
+#### Answer:
+
+`wt` seems to have the highest correlation (absolute value of $0.8676594$) with with `mpg`. As a result, `wt` would be a great predictor for `mpg`. The worst would be `qsec`.
+Correlations of variables with itself will always be $1$.
+
+## Building a linear model
+
+Here we will find a linear least squares regression model with one response and one explanatory variable.
+
+Find the least squares best fit line:
+
+```{r}
+#use lm() to build the linear regression. 
+leastsquarfit = lm(mpg ~ hp, data=df) #Lots of models have this same format - modeltype(response ~explanatory, data)
+#lm is used for linear model
+leastsquarfit  #After the model is defined you can call it like this to show the formula.
+```
+
+Show a summary of the fit.
+
+```{r}
+#Use summary() to summarize
+summary(leastsquarfit)
+```
+
+Evaluate the fit on a new points where hp = 105 and 200.
+
+```{r}
+#Use predict(model, new_xvals) to fit on new points
+
+xvals <- data.frame(hp=c(105, 200)) # These are the new x values
+
+predict(leastsquarfit,xvals ) # This creates the predictions for each of the xvals
+
+
+#Check
+#30.09886-.06823*105
+#30.09886-.06823*200
+```
+
+Draw a scatter plot with the line and the equation and $R^2$.
+
+```{r}
+ggplot(df, aes(x=hp, y =mpg)) + #Sames as before (data, aes(x, y))
+  geom_point() + #plot points
+  geom_smooth(method="lm",se = FALSE)+ #plot the lm line
+  stat_regline_equation(label.x=250, label.y=30)+ # creates the equation and puts it at the coordinates 
+  stat_cor(aes(label=..rr.label..), label.x=250, label.y=26)+ #creates the r^2 and puts it at the coordinates
+  labs(y='MPG', x='hp')+ #labels the axes
+ ggtitle(paste0('corr of MPG and hp=', round(cor(df$hp, df$mpg),4) )) #creates a title
+
+
+## `geom_smooth()` using formula 'y ~ x'
+```
+
+Find the Residual Errors, R squared and the standard error.
+
+```{r}
+# y() to extract the values desired.  Other new functions are deviance()
+str(summary(leastsquarfit)) #Shows all the objects in summary()
+
+RSqr= summary(leastsquarfit)$r.squared #extracts the rsquared from the summary
+
+SSResid=deviance(leastsquarfit)
+#sum((summary(leastsquarfit)$residuals)^2) #extracts the residuals from the summary, squares them and then sums them, this would do the same thing as the deviance function.
+
+se= summary(leastsquarfit)$sigma #Extracts the standard error of the residuals 
+
+RSqr # Show Rsqr defined above.
+SSResid # Show the SSResid defined above
+se #Show the standard error of the residuals defined above.
+
+
+#Check
+#SST= 31*sd(df$mpg)^2
+#1-SSResid/SST
+```
+
+### **Question 7**
+
+**Comment on the fit or your model**
+
+#### Answer:
+
+The fit of the model is pretty good! According to the summary or leastsquarefit, it is 3 stars (***). In addition, the $R^2$ is $0.6024$ which somewhat close to $1$ which would indicate a perfit fit.
+The Residual standard error is $3.863$ on 30 degrees of freedom which is pretty good.
+
+
+```{r}
+df_largeremoved = df %>%filter(hp<250)
+ggplot(df_largeremoved , aes(x=hp, y =mpg)) + #Sames as before (data, aes(x, y))
+  geom_point() + #plot points
+  geom_smooth(method="lm",se = FALSE)+ #plot the lm line
+  stat_regline_equation(label.x=200, label.y=30)+ # creates the equation and puts it at the coordinates 
+  stat_cor(aes(label=..rr.label..), label.x=200, label.y=26)+ #creates the r^2 and puts it at the coordinates
+  labs(y='MPG', x='hp')+ #labels the axes
+ ggtitle(paste0('corr of MPG and hp=', round(cor(df_largeremoved$hp, df_largeremoved$mpg),4) )) #creates a title
+
+
+## `geom_smooth()` using formula 'y ~ x'
+```
+
+## Several variables at once
+
+Look at the scatter plots and correlation of multiple variables:
+
+```{r fig.width=14, fig.height=12, message=FALSE, warning=FALSE}
+
+#Change some of the numeric values into ordered factors
+df$gear <- as.ordered(df$gear)
+df$cyl <- as.ordered(df$cyl)
+df$carb <- as.ordered(df$carb)
+
+pairs( ~mpg+disp+hp+drat+wt, data=df)
+
+ggpairs(df, columns=c('mpg', 'hp', 'wt', 'cyl', 'carb')) #Built in function from the GGally package that makes a bunch of stuff. 
+
+#This code will get you just the correlation values. 
+#cor(df %>% select_if(is.numeric))
+corrplot::corrplot.mixed(cor(df %>% select_if(is.numeric)),
+                   upper= 'number',
+                   lower = 'circle')
+```
+
+### **Question 8**
+
+**Make five different observations about the relationships of the variables in this data.**
+
+#### Answer:
+
+- `mpg` and `wt` has an extremely strong negative correlation of $-0.87$. This means that as the `wt` increases, `mpg` decreases.
+- A similar strongly negative observation can be seen with `mpg` and `disp`. This means that as the `disp` increases, the `mpg` decreases. (correlation = $-0.85$)
+- `drat` and `wt` also have a strongly negative observation. It has a correlation of $-0.71$.
+- On the other hand, `disp` and `wt` has the strongest positive correlation of $0.66$. However, it is not the strongest overall correlation since `mpg` and `wt` has a correlation magnitude of $0.87$ which is greater than $0.66$.
+- Last but not least, the second strongest positive correlation is between `disp` and `hp` (correlation = $0.79$).
+
+##Building a linear multivariate model
+
+Here we ill find a model with one response and multiple explanatory variable. Instead of a model that looks like: $$\hat{y}= a + b x$$
+
+We will build a model that looks like $$\hat{y}= a + b_1 x_{(1)} + b_2 x_{(2)}+\ldots+ b_n x_{(n)}$$
+
+Here the $x_{(k)}$ represent different columns rather than observations.
+
+In the context of the miles per gallon we might have:
+
+$$\widehat{mpg}= a + b_1 \text{cyl} + b_2 \text{hp}+\ldots+ b_n \text{carb}$$
+
+There are some very important considerations that would have to be done for categorical or numerical discrete variables but I am not going to discuss them here - you will note for those variables the coefficients appear ina different way.
+
+```{r}
+#use lm() to build and summarize a multi variate model.
+multifit = lm(mpg ~ wt+cyl+hp+drat, data=df) #same format as before but I have more explanatory values
+#mpg ~ explan 1 + explan 2 + explan 3 +...
+summary(multifit) # Show the summary of the model fit. 
+```
+
+There are other ways of deciding which variables can/should be included that we won't cover in this class. Things like Lasso or Ridge regression. These methods use a penalty for including more variables. Similar things exist for dealing with the discrete or categorical variables.
