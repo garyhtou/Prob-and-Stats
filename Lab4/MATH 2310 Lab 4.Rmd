@@ -1,0 +1,244 @@
+---
+title: "MATH 2310 Lab 4"
+author: Gary Tou
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+# Introduction
+
+In this lab you will explore another data set about vehicle performance very similar to to the data set we looked at in class for Lab 3. You will use the tools developed in the course so far to explore the data and then build some predictions for data that you have yet to see.
+
+# Import Libraries
+
+Below are some packages you may want to use. ISLR2 is a new package you will need to obtain the data for this problem. Install the packages first but don't include the install command in your knited document. You only need to run the install command once, then just run the library function each time you run you script.
+
+```{r results=FALSE, message=FALSE, warning=FALSE}
+#install.packages('tidyverse', 'GGally','rstatix','Stat2Data','ggpubr') #Run this code once. 
+library(tidyverse)
+library(rstatix)
+library(Stat2Data)
+library(ggpubr)
+library(GGally)
+library(ISLR2)
+```
+
+# Load the Data
+
+Once you have loaded the ISLR2 package, the data set we will use is called Auto
+
+```{r}
+df = Auto
+df$origin <- as.factor(df$origin) #Convert this column to a factor. 
+df$year <- as.ordered(df$year) #Convert this column to an ordered factor. 
+levels(df$origin)<-c('American', 'European', 'Asian') #This will assign the lables their value instead of the number. 
+```
+
+# Explore the data
+
+## **Question 1**
+
+**Look up `Auto` in the help to see a description of the data (You don't need to show any R code, but you should write some text to summarize what you see). State clearly which variables in the data set are numeric (continuous/discrete) and which are categorical (nominal/ordinal).**
+
+### **Answer**
+
+The Auto Data Set by `ISLR2` contains the gas mileage, horpower, and other information for 392 vehicles.
+
+- `mpg`: miles per gallon (numeric continuous)\n
+- `cylinders`: Number of cylinders between 4 and 8 (numeric discrete)\n
+- `displacement`: Engine displacement in cu. inches (numeric continuous)\n
+- `horsepower`: Engine horsepower (numeric continuous)\n
+- `weight`: Vehicle weight in lbs. (numeric continuous)\n
+- `acceleration`: Time to accelerate from 0 to 60 mphs in secs. (numeric continuous)\n
+- `year`: Model year, modulo 100 (categorical ordinal)\n
+- `origin`: Origin of car (1. American, 2. European, 3. Japanese) (Categorical nominal)
+
+## **Question 2**  
+
+**View a few rows of the data set.**
+
+**Review the summary of each of the numeric variables and summarize any observations about the skew.**
+
+### **Answer**
+```{r}
+head(df)
+summary(df)
+
+for (i in 1:6) {
+  print(names(df)[i])
+  print(summary(df[,i]))
+  lhs <- median(df[,i]) - quantile(df[,i], 0.25)
+  rhs <- quantile(df[,i], 0.75) - median(df[,i])
+  print(paste("Left (Q1-median):", lhs))
+  print(paste("Right (median-Q3):", rhs))
+  writeLines("\n\n")
+}
+```
+
+The first few rows can be seen above (using the `head` command).
+
+All numeric variables, except `acceleration`, seem to be **Right Skewed** since the Median is closer to Q1.
+`acceleration`, is **Left Skewed** instead.
+
+
+# Single variable investigation
+
+## **Question 3**
+
+-   **Make histograms for mpg, displacement, horsepower weight, and acceleration. Make sure to set the number of bins appropriately. **
+
+-   **Make box plots for mpg, displacement, horsepower, weight, and acceleration. Include any observations.**
+
+-   **Find any outliers for each of mpg, displacement, horsepower, weight, or acceleration.**
+
+-   **Summarize your findings for each variable. **
+
+
+### **Answer**
+
+```{r}
+histdat = df %>% select(mpg, displacement, horsepower, weight, acceleration)
+
+bins = round(sqrt(nrow(histdat)))
+
+for (i in 1:5) {
+  hist(histdat[,i], breaks=bins, freq=FALSE,
+       main=paste0(names(histdat)[i]),
+       xlab=paste0(names(histdat)[i]))
+  
+  boxplot(histdat[,i], breaks=bins, freq=FALSE,
+       main=paste0(names(histdat)[i]),
+       xlab=paste0(names(histdat)[i]),
+       horizontal = TRUE)
+  
+  outliers = df %>% identify_outliers(names(histdat)[i]) %>% arrange(names(histdat)[i])
+  
+  print(outliers)
+}
+```
+
+The proper number of bins is 20.
+
+#### `mpg`
+- Unimodal\n
+- Right skewed\n
+- No outliers
+
+#### `displacement`
+- Bimodal (although the data is noisy)\n
+- Right skewed\n
+- No outliers
+
+#### `horsepower`
+- Unimodal\n
+- Right skewed\n
+- Many outliers on the higher end (more horsepower)
+
+#### `weight`
+- Unimodal\n
+- Right skewed\n
+- No outliers
+
+#### `acceleration`
+- Unimodal\n
+- Fairly symmetrical\n
+- Outliers on both ends, however, majority are on the higher end (more acceleration)
+
+There are a total of 11 outlier observations. These seem to generally be American or European vehicles (there are no Asian outlier vehicles).
+
+# Multiple Variable Comparison
+
+## **Question 4**  
+
+**On a single graph create a box plot for mpg for each year. Included jittered points. Explain what you see and develop a hypothosis of why the behavior you observe makes sense.**
+
+### **Answer**
+
+```{r}
+ggplot(df,  aes(x=year, y = mpg, color=year)) + #Format (dataset, aes(x= xvaraible, y=yvariable, color= color variable))
+    geom_boxplot() + #plot type
+    geom_jitter(alpha=.3) + #add jitter, alpha controls the opacity of the jitter points
+    theme_minimal()
+```
+
+There seems to be an positive correlation between year and mpg. In other words, as the years increase, the mpg also increases.
+This can be visually seen in the graph by looking at the medians of each boxplot. However, there are some boxplot means that seem to be  — such as year 74.
+
+
+## **Question 5**  
+
+**On a single graph create a box plot for mpg for each value of the origin variable. Explain what you see and develop a hypothosis of why the behavior you observe makes sense.**
+
+### **Answer**
+
+```{r}
+ggplot(df,  aes(x=origin, y = mpg, color=origin)) + #Format (dataset, aes(x= xvaraible, y=yvariable, color= color variable))
+    geom_boxplot() + #plot type
+    geom_jitter(alpha=.3) + #add jitter, alpha controls the opacity of the jitter points
+    theme_minimal()
+```
+
+Vehicles from `Asia` have higher `mpg` compared to vehicles from `Europe` and `America`. The order in descending `mpg` is:
+
+1. Asian
+2. European
+3. American
+
+
+## **Question 6**  
+
+**Create a scatter plot of mpg with acceleration. Explain what you see.**
+
+### **Answer**
+
+```{r}
+#Use ggplot to create the scatter plot. 
+ggplot(df,  aes(x = acceleration,y=mpg))+  #Format (dataset, aes(x= xvaraible, y=yvariable))
+    geom_point()+ # this says to plot points
+    theme_minimal() # This is optional
+```
+
+There seem to be extremely weak correlation between acceleration and mpg. In other words, it would be difficult to use acceleration to predict a vehicle's mpg.
+
+# Regression
+
+## **Question 7**
+
+-   **Calculate the correlation for each pair of numeric variables. Find the variable that is the most correlated to mpg.  Also find the variable that is the second-most correlated with mpg. **
+-   **For each of the two variables found in the step above, create separate regression equations predicting miles per gallon using each variable. Show the equation, the $r^2$, the standard deviation of the residuals. Then create a scatter plot for each including the regression line plot. You should have two of everything - equation, $r^2$, standard deviations, and plots.**
+-   **Explain which of the two regressions you think is better and why.**
+-   **In words explain why using multiple regression might be better in this case.**
+
+### **Answer**
+```{r}
+cor(df %>% select_if(is.numeric))
+
+# The most correlated with mpg are weight and displacement.
+var_regression <- function(var_name) {
+  df$x = df[, c(var_name)]
+  df$y = df$mpg
+  
+  lsfit = lm(y ~ x, data=df)
+  lsfit
+  
+  summary(lsfit)
+  
+  ggplot(df, aes(x=x, y=y)) + #Sames as before (data, aes(x, y))
+    geom_point() + #plot points
+    geom_smooth(method="lm",se = FALSE)+ #plot the lm line
+    stat_regline_equation(label.x=250, label.y=30)+ # creates the equation and puts it at the coordinates 
+    stat_cor(aes(label=..rr.label..), label.x=250, label.y=26)+ #creates the r^2 and puts it at the coordinates
+    labs(y='MPG', x=var_name)+ #labels the axes
+   ggtitle(paste0('corr of MPG and ', var_name, '=', round(cor(df$y, df$x),4) )) #creates a title
+}
+
+var_regression("weight")
+var_regression("displacement")
+```
+
+The better regression is 
