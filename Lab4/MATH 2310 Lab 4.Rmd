@@ -219,6 +219,7 @@ There seem to be extremely weak correlation between acceleration and mpg. In oth
 cor(df %>% select_if(is.numeric))
 
 # The most correlated with mpg are weight and displacement.
+
 var_regression <- function(var_name) {
   df$x = df[, c(var_name)]
   df$y = df$mpg
@@ -226,7 +227,13 @@ var_regression <- function(var_name) {
   lsfit = lm(y ~ x, data=df)
   lsfit
   
-  summary(lsfit)
+  s = summary(lsfit)
+  
+  print(paste0("Equation: y = ", lsfit$coefficients[[2]], "x + ", lsfit$coefficients[[1]]))
+  print(paste("R^2:", s$r.squared))
+  print(paste("Standard Deviation of Residuals:", s$sigma))
+  
+  print(s)
   
   ggplot(df, aes(x=x, y=y)) + #Sames as before (data, aes(x, y))
     geom_point() + #plot points
@@ -234,11 +241,13 @@ var_regression <- function(var_name) {
     stat_regline_equation(label.x=250, label.y=30)+ # creates the equation and puts it at the coordinates 
     stat_cor(aes(label=..rr.label..), label.x=250, label.y=26)+ #creates the r^2 and puts it at the coordinates
     labs(y='MPG', x=var_name)+ #labels the axes
-   ggtitle(paste0('corr of MPG and ', var_name, '=', round(cor(df$y, df$x),4) )) #creates a title
+    ggtitle(paste('Correlation of MPG and', var_name, '=', round(cor(df$y, df$x),4) )) #creates a title
 }
 
 var_regression("weight")
 var_regression("displacement")
 ```
 
-The better regression is 
+The better regression is MPG and weight because it has a higher $R^2$ value. A $R^2$ value of 1 would indicate a perfect model. Therefore, a higher $R^2$ value is reason to believe that one regression model is better than another. In this case, the MPG and Weight regression has a $R^2=0.69$ while MPG and displacement's $R^2=0.65$. Therefore, MPG and weight is a better regression.
+
+Multiple regressions essentially provide us with more data to formula the regression. With the addition of more variables, it allows us to create a closer fitting and more accurate regression. In this case, The multiple regression could be composed of both weight and displacement. In that case, it would theoretically provide us with a better predictor of MPG given weight and displacement as inputs.
