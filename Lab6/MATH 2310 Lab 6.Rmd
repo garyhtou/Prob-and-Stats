@@ -1,6 +1,6 @@
 ---
 title: "MATH 2310 Lab 6"
-author: Name
+author: Gary Tou
 output: 
   html_document:
     toc: true
@@ -74,7 +74,7 @@ Change the a seed value to a random number you pick. Make it something large and
 
 ```{r}
 population <- ames$SalePrice
-set.seed(90210) #Change this seed to something else.
+set.seed(2078203) #Change this seed to something else.
 
 n=60
 samp <- sample(population, n)
@@ -86,11 +86,15 @@ Describe the distribution of your sample. What would you say is the "typical" sa
 
 ## Answer:
 
-**Type Answer Here**
+The sample collected from the population has a sample size of 60 and is **unimodal**. The boxplot and histogram shows that it is right-skewed, and the boxplot shows two outliers (both with higher prices). The typical value is between $\$179k$ and $\$222k$ (25th and 75th percentile).
 
 ```{r}
 # Calculate some Summary stats
+summary(samp)
+
 #Calculate a box plot and histogram
+hist(samp)
+boxplot(samp)
 ```
 
 # Exercise 2:
@@ -99,14 +103,16 @@ Would you expect another student's distribution to be identical to yours? Would 
 
 ## Answer:
 
-**Answer Here**
+No! Another student's distribution will most likely NOT be identical to mine since everyone picked a different **seed** value. This seed value was used to randomly collect a sample from the population dataset. This means that everyone's sample dataset is different and will result in differing distribution. However, it could be expected that most distributions will be relatively similar some the data comes from the same population dataset.
 
 # Confidence Intervals
 
 A Point Estimate for the true population mean is the sample mean.
 
 ```{r}
-sample_mean = # Calculate the sample mean here.
+# Calculate the sample mean here.
+sample_mean = mean(samp)
+sample_mean
 ```
 
 We can calculate a 95% confidence interval for the population mean by adding and subtracting the t-score times the standard errors to the point estimate (See Chapter 7).
@@ -143,7 +149,7 @@ Why is the t-distribution a better choice than a normal distribution in this cas
 
 ## Answer:
 
-**Answer Here**
+t-distribution is the better choice since the other option requires us to know the true population sigma ($\sigma$). We could use the sample sigma, but it introduces additional uncertainty. So, we must use a t-distribution that will provide a wider interval than the normal distribution to account for this additional uncertainty.
 
 # Exercise 4:
 
@@ -151,7 +157,7 @@ What does "95% confidence" mean?
 
 ## Answer:
 
-**Answer Here**
+If you calculate many confidence intervals, $95\%$ of them will contain the true population mean in the long-run.
 
 # Exercise 5.
 
@@ -166,7 +172,7 @@ Does your confidence interval capture the true average size of houses in Ames?
 
 ## Answer:
 
-**Answer Here**
+Yes, my confidence interval does capture the true population mean.
 
 # Exercise 6:
 
@@ -174,7 +180,7 @@ Each student in class should have gotten a slightly different confidence interva
 
 ## Answer:
 
-**Answer Here**
+Roughly $95\%$ will contain the true population mean since we choose a confidence level $95\%$.
 
 # Exercise 7:
 
@@ -191,6 +197,8 @@ n <- 60
 Now we're ready for the loop where we calculate the means and standard deviations of 100 random samples. The sample(population, n) code creates a sample of size n from the vector we called population. In each iteration of the loop this is a different set of n values. We then calculate the mean and sd of that sample and store it in the vectors we initialized.
 
 ```{r}
+set.seed(2078203)
+
 for(i in 1:100){
   samp <- sample(population, n) # obtain a sample of size n = 60 from the population
   samp_mean[i] <- mean(samp)    # save sample mean in ith element of samp_mean
@@ -201,8 +209,8 @@ for(i in 1:100){
 Lastly, we construct the confidence intervals.
 
 ```{r}
-lower_vector # Put in formula for lower value of the Confidence intervals
-upper_vector #Put in the formula for the upper value of the confidence intervals.
+lower_vector = samp_mean - qt(.975, n-1)*samp_sd/sqrt(n) # Put in formula for lower value of the Confidence intervals
+upper_vector = samp_mean + qt(.975, n-1)*samp_sd/sqrt(n) #Put in the formula for the upper value of the confidence intervals.
 #This calculation is doing all 100 calculations at the same time!
 #note that .975 = (1+.95)/2 and a general formula for the value needed is (1+ConfidenceLevel)/2
 ```
@@ -210,21 +218,18 @@ upper_vector #Put in the formula for the upper value of the confidence intervals
 Lower bounds of these 100 confidence intervals are stored in lower_vector, and the upper bounds are in upper_vector. Let's view the first interval.
 
 ```{r}
-
 c(lower_vector[1], upper_vector[1])
-
 ```
 
 Using the `plot_confinv` helper function, plot all intervals. What proportion of your confidence intervals include the true population mean? Is this proportion exactly equal to the confidence level? If not, explain why.
 
 ```{r}
-
 plot_confinv(lower_vector, upper_vector, mean(population),100)
 ```
 
 ## Answer:
 
-**Answer Here**
+From the plotted intervals, there are 4 CIs that do NOT contain the the true population mean — and therefore, 96 of the 100 intervals do containt the true population mean. This is not exactly the equal to the confidence level because the confidence levels is only a probabilty that a single interval will contain it. It could be expected that on average, there would be 5 intervals that don't contain the true population mean.
 
 # Exercise 8:
 
@@ -244,7 +249,7 @@ plot_confinv(lower_vector, upper_vector, mean(population),100)
 
 ## Answer:
 
-**Answer Here**
+With a lower confidence level ($.8$), the confidence intervals will be more narrow and as a result, there will be more intervals that don't contain the true population mean. This is depicted in the plot as there are many red bars. It could be expected for there to be 20 confidence intervals that don't contain the true population mean in this set of 100 intervals.
 
 # Exercise 9:
 
@@ -252,4 +257,4 @@ Write a few sentence summary describing what you learned in this lab about Confi
 
 ## Answer:
 
-**Answer Here**
+This lab was a great way to learn about how to apply the theoretical math of confidence intervals to a real world example with a dataset. I also learn how to better work with vectors to perform bulk calculation.
