@@ -1,0 +1,255 @@
+---
+title: "MATH 2310 Lab 6"
+author: Name
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+# Confidence Intervals
+
+In this lab you will explore confidence intervals.
+
+## Import Libraries
+
+Below are some packages you may want to use. There are no new packages from the last lab. You only need to run the install command once so if you installed them in the last lab, then just run the library function each time you run you script.
+
+```{r results=FALSE, message=FALSE, warning=FALSE}
+#install.packages('tidyverse', 'GGally','rstatix','Stat2Data','ggpubr', 'ISLR2') #Run this code once. 
+library(tidyverse)
+library(rstatix)
+library(ggpubr)
+
+```
+
+## Get Data
+
+```{r}
+download.file("http://www.openintro.org/stat/data/ames.RData", destfile = "ames.RData")
+load("ames.RData")
+```
+
+## Helper Function
+
+This function will be used for plotting confidence intervals:
+
+```{r}
+plot_confinv <- function(lo, hi, m, k){
+  par(mar=c(2, 1, 1, 1), mgp=c(2.7, 0.7, 0))
+  k <-k
+  ci.max <- max(rowSums(matrix(c(-1*lo,hi),ncol=2)))
+
+  xR <- m + ci.max*c(-1, 1)
+  yR <- c(0, 41*k/40)
+
+  plot(xR, yR, type='n', xlab='', ylab='', axes=FALSE)
+  abline(v=m, lty=2, col='#00000088')
+  axis(1, at=m, paste("mu = ",round(m,4)), cex.axis=1.15)
+  #axis(2)
+  for(i in 1:k){
+    x <- mean(c(hi[i],lo[i]))
+	  ci <- c(lo[i],hi[i])
+	  if(contains(lo[i],hi[i],m)==FALSE){
+		  col <- "#F05133"
+		  points(x, i, cex=1.4, col=col)
+#		  points(x, i, pch=20, cex=1.2, col=col)
+		  lines(ci, rep(i, 2), col=col, lwd=5)
+	  }
+	  col <- 1
+  	points(x, i, pch=20, cex=1.2, col=col)
+	  lines(ci, rep(i, 2), col=col)
+  }
+}
+```
+
+# Intro
+
+In this lab we'll start with a simple random sample of size 60 from the population. Note that the data set has information on many housing variables, but for the first portion of the lab we'll focus on the sale price of the house, represented by the variable SalePrice.
+
+Change the a seed value to a random number you pick. Make it something large and random so hopefully that its different from others in the class.
+
+```{r}
+population <- ames$SalePrice
+set.seed(90210) #Change this seed to something else.
+
+n=60
+samp <- sample(population, n)
+```
+
+# Exercise 1:
+
+Describe the distribution of your sample. What would you say is the "typical" sale price within your sample? Also state precisely what you interpreted "typical" to mean. Use histograms, boxplots and summary statistics to support your answer.
+
+## Answer:
+
+**Type Answer Here**
+
+```{r}
+# Calculate some Summary stats
+#Calculate a box plot and histogram
+```
+
+# Exercise 2:
+
+Would you expect another student's distribution to be identical to yours? Would you expect it to be similar? Why or why not?
+
+## Answer:
+
+**Answer Here**
+
+# Confidence Intervals
+
+A Point Estimate for the true population mean is the sample mean.
+
+```{r}
+sample_mean = # Calculate the sample mean here.
+```
+
+We can calculate a 95% confidence interval for the population mean by adding and subtracting the t-score times the standard errors to the point estimate (See Chapter 7).
+
+```{r}
+#Using a Z score
+
+#St error based on the sample standard error - best we can do since true sigma is not known.
+#se <- sd(samp) / sqrt(60)
+#Confidence_Level = .95
+
+#Zscore = qnorm(.975)
+
+#lower <- sample_mean - Zscore * se
+#upper <- sample_mean + Zscore * se
+#c(lower, upper)
+
+
+
+#Using a student - t 
+#St error based on the sample standard error - best we can do since true sigma is not known.
+sd_xbar <- sd(samp) / sqrt(n)
+
+tscore = qt(.975, df=n-1) # Use .975 for the 95% two sided CI
+
+lower <- sample_mean - tscore * sd_xbar
+upper <- sample_mean + tscore * sd_xbar
+c(lower, upper)
+```
+
+# Exercise 3:
+
+Why is the t-distribution a better choice than a normal distribution in this case for calculating the CI as described above?
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 4:
+
+What does "95% confidence" mean?
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 5.
+
+In this case we have the luxury of knowing the true population mean since we have data on the entire population. This value can be calculated using the following command:
+
+```{r}
+mean(population)
+## [1]  180796.1
+```
+
+Does your confidence interval capture the true average size of houses in Ames?
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 6:
+
+Each student in class should have gotten a slightly different confidence interval. What proportion of those intervals would you expect to capture the true population mean? Why?
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 7:
+
+Let us demonstrate the answer from Exercise 6. First create 100 different samples of size 60.
+
+We need to first create empty vectors where we can save the sample means and sample standard deviations that will be calculated from each sample. And while we're at it, let's also store the desired sample size as n.
+
+```{r}
+samp_mean <- rep(NA, 100) #empty vector for the sample_means
+samp_sd <- rep(NA, 100) #empty vector for the sample standard deviations
+n <- 60
+```
+
+Now we're ready for the loop where we calculate the means and standard deviations of 100 random samples. The sample(population, n) code creates a sample of size n from the vector we called population. In each iteration of the loop this is a different set of n values. We then calculate the mean and sd of that sample and store it in the vectors we initialized.
+
+```{r}
+for(i in 1:100){
+  samp <- sample(population, n) # obtain a sample of size n = 60 from the population
+  samp_mean[i] <- mean(samp)    # save sample mean in ith element of samp_mean
+  samp_sd[i] <- sd(samp)        # save sample sd in ith element of samp_sd
+}
+```
+
+Lastly, we construct the confidence intervals.
+
+```{r}
+lower_vector # Put in formula for lower value of the Confidence intervals
+upper_vector #Put in the formula for the upper value of the confidence intervals.
+#This calculation is doing all 100 calculations at the same time!
+#note that .975 = (1+.95)/2 and a general formula for the value needed is (1+ConfidenceLevel)/2
+```
+
+Lower bounds of these 100 confidence intervals are stored in lower_vector, and the upper bounds are in upper_vector. Let's view the first interval.
+
+```{r}
+
+c(lower_vector[1], upper_vector[1])
+
+```
+
+Using the `plot_confinv` helper function, plot all intervals. What proportion of your confidence intervals include the true population mean? Is this proportion exactly equal to the confidence level? If not, explain why.
+
+```{r}
+
+plot_confinv(lower_vector, upper_vector, mean(population),100)
+```
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 8:
+
+Pick a confidence level of your choosing, provided it is not 95%.
+
+For 100 different samples, calculate 100 confidence intervals at the confidence level you choose. You do not need to obtain new samples, simply calculate new intervals based on the sample means and standard deviations you have already collected. Using the `plot_confinv` function, plot all intervals and calculate the proportion of intervals that include the true population mean. How does this percentage compare to the confidence level selected for the intervals?
+
+```{r}
+confidence= .80
+
+lower_vector <- samp_mean - qt((1+confidence)/2, n-1) * samp_sd / sqrt(n) 
+upper_vector <- samp_mean + qt((1+confidence)/2, n-1) * samp_sd / sqrt(n)
+
+
+plot_confinv(lower_vector, upper_vector, mean(population),100)
+```
+
+## Answer:
+
+**Answer Here**
+
+# Exercise 9:
+
+Write a few sentence summary describing what you learned in this lab about Confidence intervals.
+
+## Answer:
+
+**Answer Here**
