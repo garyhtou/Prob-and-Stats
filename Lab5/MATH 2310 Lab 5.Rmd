@@ -1,0 +1,305 @@
+---
+title: "MATH 2310 Lab 5"
+author: Name
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+    theme: united
+    highlight: tango
+    df_print: paged
+---
+
+## Introduction
+
+In this lab you will explore sampling distributions and the Central Limit theorem.
+
+## Import Libraries
+
+You should only need one new package, `tidymodels,` for this lab.
+
+```{r results=FALSE, message=FALSE, warning=FALSE}
+#install.packages('tidymodels')
+library(tidymodels)
+library(tidyverse)
+library(rstatix)
+library(Stat2Data)
+library(ggpubr)
+library(GGally)
+library(ISLR2)
+```
+
+## Sampling Distributions
+
+This section contains code to show you some basic commands for creating a sampling distribution. You will use this code to answer the questions that follow.
+
+### Generate a Sampling Distribution
+
+This code assumes an underlying distribution is exponential with $\lambda = .5$ and generates $N=10,000$ samples each with $n=5$ elements and calculates the sample mean for each of the 10,000 samples. The results are stored in a vector called `sample_means.`
+
+```{r}
+#make this example reproducible
+set.seed(0)
+
+#define number of samples
+N = 10000
+
+#define the size of each sample
+n = 5
+
+#create empty vector of length N
+sample_means = rep(NA, N)
+
+#fill empty vector with means
+for(i in 1:N){
+  sample_means[i] = mean(rexp(n, rate=0.5)) # if you want to do a different underlying distribution replace rexp with one of the other known sample generators. 
+}
+
+#view first six sample means
+head(sample_means)
+
+```
+
+### Draw a histogram
+
+We have drawn histograms many times before, here is another where we create a histogram from the sample_means generated in the previous section. Note that, `breaks = 100` is appropriate since there are 10,000 values in `sample_means`.
+
+```{r}
+#create histogram to visualize the sampling distribution
+hist(sample_means, breaks =100, main = "", xlab = "Sample Means", col = "steelblue")
+```
+
+### Approximating parameters of our Sampling Distribution
+
+Here we calculate the mean and the standard deviation *from the generated sampling distribution data*, although from class you have formulas of what the exact values should be based on the underlying distribution and the value of $n$. The values from the generated data won't match the theoretical values exactly (since we generated samples) but they should be very close since we took 10,000 sample means.
+
+```{r}
+#Theoretical mean of the sampling distribution
+lambda =.5
+theoretical_mu_xbar= 1/lambda
+theoretical_sigma_xbar = (1/lambda)/sqrt(n)
+
+
+#mean of sampling distribution
+mean(sample_means) #from the generated data (sample mean of the sample mean)
+theoretical_mu_xbar #theoretical value
+
+#standard deviation of sampling distribution
+sd(sample_means) #sample sd of the gnerated sample mean data
+theoretical_sigma_xbar #theoretical sd of the sampling distribution
+
+```
+
+### Curves over histograms
+
+This is just a refresher of how to draw a curve over a histogram. We did this in the second lab assignment. The histogram and the normal curve drawn below have the same means and standard deviation but the normal curve doesn't approximate the standard deviation well since n is only 5. We would expect that it lines up more if we were to repeat this exercise for a larger value of n.
+
+```{r}
+
+# Make a histogram on the density scale
+hist(sample_means, prob = TRUE, breaks=100, main= "Histogram with curve overlaid",col = "steelblue")
+
+#Overlay a curve (note the add = TRUE)
+curve(dnorm(x,theoretical_mu_xbar, theoretical_sigma_xbar), from =-2,col = 1, lty = 2, lwd = 2, add = TRUE)
+```
+
+```{r}
+# This is a helper function for generating samples
+# N = number of samples
+# n = size of each sample
+# mu = mean
+# sigma = sd
+generateLNorm = function(n = 1, N = 40000, mu = 2, sigma = .5) {
+  #make this example reproducible
+  set.seed(0)
+
+  #create empty vector of length N
+  sample_means = rep(NA, N)
+  
+  #fill empty vector with means
+  for(i in 1:N){
+    sample_means[i] = mean(rlnorm(n, meanlog = mu, sdlog = sigma))
+  }
+  
+  sample_means
+}
+```
+
+## Problems
+
+### Case when n = 1
+
+-   **Generate 40000 sample means of a log normal distribution with** $\mu=2$ **and** $\sigma = .5$ **using samples of size** $n=1$**. (This is actually not a sampling distribution its just a single sample from log-normal since** $n=1$**).**
+
+```{r}
+n1_sample = generateLNorm(n = 1)
+```
+
+-   **Draw a histogram on the density scale of the generated data.**
+
+```{r}
+hist(n1_sample, prob = TRUE, breaks = 100, main = 'Histogram with 40000 samples and n = 1')
+```
+
+-   **Describe in words what this histogram looks like (symmetry and modality).**
+
+The histogram looks unimodal and right skewed.
+
+-   **Is this distribution log-normal? Why or why not?**
+
+Yes! Histograms of normal distributions tend to start off unimodal, but then taper off (right skewed). This is what we see in the histogram above.
+
+-   **Is this distribution approximately normal? Why or why not?**
+
+It could be arugued that the distribution is somewhat normal, however, it seems to be closer to log normal than normal. I'm going to say that it is NOT normal.
+
+### Case when n = 5
+
+-   **Generate 40000 sample means of a log normal distribution with** $\mu=2$ **and** $\sigma = .5$ **using samples of size** $n=5$**.**
+
+```{r}
+n5_sample = generateLNorm(n = 5)
+```
+
+-   **Draw a histogram on the density scale from the generated data.**
+
+```{r}
+hist(n5_sample, prob = TRUE, breaks = 100, main = 'Histogram with 40000 samples and n = 5')
+```
+
+-   **Calculate the sample mean and the standard deviation from the generated data.**
+
+```{r}
+paste('Mean:', mean(n5_sample))
+paste('Standard deviation:', sd(n5_sample))
+```
+
+-   **Recalling that the mean of a log-normal is** $e^{\mu+\sigma^2/2}$ **and the standard deviation of a log-normal is** $\sqrt{\left(e^{\sigma^2}-1\right)e^{2\mu+\sigma^2}}$**. Calculate, using the formulas derived in class, what the theoretical mean and standard deviation of** $\overline{x}$ **should be for** $n=5$**. Does this agree with the values calculated from the generated data? Summarize in complete sentences.**
+
+```{r}
+sigma <- .5
+mu <- 2
+n <- 5
+e <- exp(1)
+
+n5_theoretical_mean_xbar = e^(mu + sigma^2/2)
+paste('Theoretical Mean:', n5_theoretical_mean_xbar)
+
+n5_theoretical_sd_xbar = sqrt((e^(sigma^2) - 1) * e^(2 * mu + sigma^2)) / sqrt(n)
+paste('Theoretical Standard Deviation:', n5_theoretical_sd_xbar)
+```
+
+Yes, these values agree with the ones values calcuated from the generated data.
+
+-   **Should the histogram for** $n=5$ **be log-normal shaped? Why or why not?**
+
+It should still be log-normal, however, will begin to look more normal if `n` grows larger.
+
+-   **Should the histogram for** $n=5$ **be approximately normal shaped? Why or why not?**
+
+The histogram should still be log-normal (not normal). You need a larger `n` until it becomes normal.
+
+-   **Re-draw the histogram but overlay a normal curve that has mean and standard deviation matching the theoretical mean and standard deviation of the sampling distribution. If you believe the histogram should be normal these should line up well. If you don't believe these should be normal they won't line up. Does the result match your expectation?**
+
+```{r}
+hist(n5_sample, prob = TRUE, breaks = 100, main = 'Histogram with 40000 samples and n = 5')
+
+curve(dnorm(x, n5_theoretical_mean_xbar, n5_theoretical_sd_xbar), from =-2,col = 1, lty = 2, lwd = 2, add = TRUE)
+```
+
+Yes! the results match my expectations. The histogram does not line up with the normal curve. The histogram is log-normal.
+
+### Case when n = 50
+
+-   **Generate 40000 sample means of a log normal distribution with** $\mu=2$ **and** $\sigma = .5$ **using samples of size** $n=50$**.**
+
+```{r}
+n50_sample = generateLNorm(n = 50)
+```
+
+-   **Draw a histogram on the density scale from the generated data.**
+
+```{r}
+hist(n50_sample, prob = TRUE, breaks = 100, main = 'Histogram with 40000 samples and n = 50')
+```
+
+-   **Calculate the sample mean and the standard deviation from the generated data.**
+
+```{r}
+paste('Mean:', mean(n50_sample))
+paste('Standard deviation:', sd(n50_sample))
+```
+
+-   **Recalling that the mean of a log-normal is** $e^{\mu+\sigma^2/2}$ **and the standard deviation of a log-normal is** $\sqrt{\left(e^{\sigma^2}-1\right)e^{\mu+\sigma^2/2}}$**. Calculate, using the formulas derived in class what the mean and standard deviation of** $\overline{x}$ **should be for** $n=50$**. Does this agree with the values calculated from the generated data?**
+
+```{r}
+sigma <- .5
+mu <- 2
+n <- 50
+e <- exp(1)
+
+n50_theoretical_mean_xbar = e^(mu + sigma^2/2)
+paste('Theoretical Mean:', n50_theoretical_mean_xbar)
+
+n50_theoretical_sd_xbar = sqrt((e^(sigma^2) - 1) * e^(2 * mu + sigma^2)) / sqrt(n)
+paste('Theoretical Standard Deviation:', n50_theoretical_sd_xbar)
+```
+
+Yes, these agree with the values calculated from the generated data.
+
+-   **In words describe the differences in the sampling distributions that you see between the case when** $n=5$ **and** $n=50$**.**
+
+The sampling distribution of $n=50$ has a smaller standard deviation compared to $n=5$. However, both have around the same means.
+
+-   **Should the histogram when** $n=50$ **be log-normal shaped? Why or why not?**
+
+No, at a `n` this large, it should look normal shaped.
+
+-   **Should the histogram when** $n=50$ **be approximately normal shaped? Why or why not?**
+
+Yes, the histogram is normal shaped because of the large `n`.
+
+-   **Re-draw the histogram but overlay a normal curve that has mean and standard deviation matching the theoretical mean and standard deviation of the sampling distribution. If you believe the histogram should be normal these should line up well. If you don't believe these should be normal they won't line up. Does the result match your expectation?**
+
+```{r}
+hist(n50_sample, prob = TRUE, breaks = 100, main = 'Histogram with 40000 samples and n = 50')
+
+curve(dnorm(x, n50_theoretical_mean_xbar, n50_theoretical_sd_xbar), from =-2,col = 1, lty = 2, lwd = 2, add = TRUE)
+```
+
+Yes, it looks like the histogram likes up with the normal curve pretty well. There is still a slight sign of log-normal in the histogram, but it's close enough to the normal curve to be considered approxmiately normal.
+
+### Using the Normal Approximation when n=50.
+
+-   **Suppose that the time to failure of a particular device in years is log normal distribution with** $\mu=2$ **and** $\sigma = .5$**. Approximate the probability that the average lifetime of 50 of these devices is at least 8 years but no more than 10 years. Do the calculation using the normal approximation and then summarize your answer in words.**
+
+```{r}
+norm_n = 50
+norm_sample <- generateLNorm(n = norm_n)
+
+norm_sample_mean = mean(norm_sample)
+norm_sample_sd = sd(norm_sample)
+
+zScore_10 <- (10 - norm_sample_mean) / norm_sample_sd
+zScore_8 <- (8 - norm_sample_mean) / norm_sample_sd
+
+upper <- pnorm(zScore_10, lower.tail = TRUE)
+lower <- pnorm(zScore_8, lower.tail = TRUE)
+upper - lower
+```
+
+Using a sample of log normal ($n=50$, $N=40000$), you can then use the sample mean and standard deviation to get a **z score** for 10 years and 8 years. With these z scores, you can use normal approximation to estimate the time til failure for 10 years and 8 years, then subtract the two to get the probabilty of the desired time range. This comes out to $0.719$.
+
+-   **Using the same setup, what interval would you expect to see the average of the lifetime of 50 devices, 95% of the time? Calculate the value in R and explain the logic you used to calculate the interval.**
+
+```{r}
+norm_sd_xbar <- norm_sample_sd / sqrt(norm_n)
+
+t_score <- qt(.975, df = norm_n-1)
+
+upper <- norm_sample_mean + t_score * norm_sd_xbar
+lower <- norm_sample_mean - t_score * norm_sd_xbar
+c(lower, upper)
+```
+
+Using the `qt` function, I can get the t-score of $95%$ confidence level (the degrees of freedom for this is $n-1 = 50-1 = 49$). I passed $.975$ to the `qt` function since $5\%$ split between two both sides leaves $2.5$ per side. From there, you calculate the lower and upper points of the confidence interval.
